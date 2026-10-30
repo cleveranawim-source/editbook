@@ -4,19 +4,12 @@ import { useActionState, useEffect, useRef, useTransition } from "react";
 import {
   addMemberAction, createPartAction, movePartAction, removeMemberAction, updatePartAction,
 } from "./actions";
-
-const input = "rounded border border-gray-300 px-3 py-2 text-base";
-const btn = "rounded bg-blue-600 px-3 py-2 text-white disabled:opacity-60";
+import { Button } from "@/components/Button";
+import { cx } from "@/components/cx";
+import { Field, FormError, InlineError, Input, Select } from "@/components/Field";
+import { ChevronDown, ChevronUp } from "@/components/icons";
 
 type Opt = { id: string; label: string };
-
-function Err({ message }: { message?: string }) {
-  return message ? (
-    <p role="alert" className="text-sm text-red-600">
-      {message}
-    </p>
-  ) : null;
-}
 
 function useResetOnSuccess(pending: boolean, error?: string) {
   const ref = useRef<HTMLFormElement>(null);
@@ -31,33 +24,32 @@ function useResetOnSuccess(pending: boolean, error?: string) {
 export function AddMemberForm({ bookId, users }: { bookId: string; users: Opt[] }) {
   const [state, action, pending] = useActionState(addMemberAction, {});
   const ref = useResetOnSuccess(pending, state.error);
+  const none = users.length === 0;
   return (
-    <form ref={ref} action={action} className="flex flex-col gap-3">
+    <form ref={ref} action={action} className="grid gap-3 md:grid-cols-[minmax(0,1fr)_180px_auto] md:items-end">
       <input type="hidden" name="bookId" value={bookId} />
-      <label className="flex flex-col gap-1 text-sm">
-        계정
-        <select name="userId" required defaultValue="" className={input}>
+      <Field label="계정">
+        <Select name="userId" required defaultValue="" disabled={none}>
           <option value="" disabled>
-            선택하세요
+            {none ? "추가할 계정이 없습니다" : "선택하세요"}
           </option>
           {users.map((u) => (
             <option key={u.id} value={u.id}>
               {u.label}
             </option>
           ))}
-        </select>
-      </label>
-      <label className="flex flex-col gap-1 text-sm">
-        역할
-        <select name="role" defaultValue="AUTHOR" className={input}>
+        </Select>
+      </Field>
+      <Field label="역할">
+        <Select name="role" defaultValue="AUTHOR" disabled={none}>
           <option value="EDITOR">편집장</option>
           <option value="AUTHOR">교사</option>
-        </select>
-      </label>
-      <Err message={state.error} />
-      <button type="submit" disabled={pending} className={btn}>
+        </Select>
+      </Field>
+      <Button type="submit" variant="secondary" pending={pending} disabled={none} className="min-w-24">
         추가
-      </button>
+      </Button>
+      <FormError message={state.error} className="md:col-span-3" />
     </form>
   );
 }
@@ -65,13 +57,13 @@ export function AddMemberForm({ bookId, users }: { bookId: string; users: Opt[] 
 export function RemoveMemberForm({ bookId, userId }: { bookId: string; userId: string }) {
   const [state, action, pending] = useActionState(removeMemberAction, {});
   return (
-    <form action={action} className="flex flex-col gap-1">
+    <form action={action} className="flex flex-col items-end gap-1">
       <input type="hidden" name="bookId" value={bookId} />
       <input type="hidden" name="userId" value={userId} />
-      <button type="submit" disabled={pending} className="rounded bg-gray-700 px-3 py-2 text-white disabled:opacity-60">
+      <Button type="submit" variant="quietDanger" size="sm" pending={pending}>
         제거
-      </button>
-      <Err message={state.error} />
+      </Button>
+      <InlineError message={state.error} className="text-right" />
     </form>
   );
 }
@@ -80,47 +72,44 @@ export function CreatePartForm({ bookId, members }: { bookId: string; members: O
   const [state, action, pending] = useActionState(createPartAction, {});
   const ref = useResetOnSuccess(pending, state.error);
   return (
-    <form ref={ref} action={action} className="flex flex-col gap-3">
+    <form ref={ref} action={action} className="grid gap-3 md:grid-cols-[minmax(0,1fr)_220px_auto] md:items-end">
       <input type="hidden" name="bookId" value={bookId} />
-      <label className="flex flex-col gap-1 text-sm">
-        제목
-        <input name="title" required autoComplete="off" className={input} />
-      </label>
-      <label className="flex flex-col gap-1 text-sm">
-        담당
-        <select name="assigneeUserId" defaultValue="" className={input}>
+      <Field label="제목">
+        <Input name="title" required autoComplete="off" placeholder="예: 4단원 종교와 삶" />
+      </Field>
+      <Field label="담당">
+        <Select name="assigneeUserId" defaultValue="">
           <option value="">담당 없음</option>
           {members.map((m) => (
             <option key={m.id} value={m.id}>
               {m.label}
             </option>
           ))}
-        </select>
-      </label>
-      <Err message={state.error} />
-      <button type="submit" disabled={pending} className={btn}>
+        </Select>
+      </Field>
+      <Button type="submit" variant="secondary" pending={pending} className="min-w-24">
         추가
-      </button>
+      </Button>
+      <FormError message={state.error} className="md:col-span-3" />
     </form>
   );
 }
 
 export function AssigneeForm({
-  bookId, partId, assigneeUserId, members,
-}: { bookId: string; partId: string; assigneeUserId: string | null; members: Opt[] }) {
+  bookId, partId, assigneeUserId, members, className,
+}: { bookId: string; partId: string; assigneeUserId: string | null; members: Opt[]; className?: string }) {
   const [state, action, pending] = useActionState(updatePartAction, {});
   return (
-    <form action={action} className="flex flex-col gap-1">
+    <form action={action} className={cx("flex flex-col gap-1", className)}>
       <input type="hidden" name="bookId" value={bookId} />
       <input type="hidden" name="partId" value={partId} />
-      <label className="flex flex-col gap-1 text-sm">
-        담당
-        <select
+      <Field label="담당" labelClassName="lg:sr-only">
+        <Select
           name="assigneeUserId"
           defaultValue={assigneeUserId ?? ""}
           disabled={pending}
+          aria-busy={pending || undefined}
           onChange={(e) => e.currentTarget.form?.requestSubmit()}
-          className={input}
         >
           <option value="">담당 없음</option>
           {members.map((m) => (
@@ -128,58 +117,70 @@ export function AssigneeForm({
               {m.label}
             </option>
           ))}
-        </select>
-      </label>
-      <Err message={state.error} />
+        </Select>
+      </Field>
+      <InlineError message={state.error} />
     </form>
   );
 }
 
 export function PartEditForm({
-  bookId, partId, title, note,
-}: { bookId: string; partId: string; title: string; note: string | null }) {
+  bookId, partId, title, note, className,
+}: { bookId: string; partId: string; title: string; note: string | null; className?: string }) {
   const [state, action, pending] = useActionState(updatePartAction, {});
   return (
-    <form action={action} className="flex flex-col gap-2">
+    <form
+      action={action}
+      className={cx("grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_76px] lg:items-start", className)}
+    >
       <input type="hidden" name="bookId" value={bookId} />
       <input type="hidden" name="partId" value={partId} />
-      <label className="flex flex-col gap-1 text-sm">
-        제목
-        <input name="title" required defaultValue={title} autoComplete="off" className={input} />
-      </label>
-      <label className="flex flex-col gap-1 text-sm">
-        메모
-        <textarea name="note" rows={2} defaultValue={note ?? ""} className={input} />
-      </label>
-      <Err message={state.error} />
-      <button type="submit" disabled={pending} className={btn}>
+      <Field label="제목" labelClassName="lg:sr-only">
+        <Input name="title" required defaultValue={title} autoComplete="off" />
+      </Field>
+      <Field label="메모" labelClassName="lg:sr-only">
+        <Input name="note" defaultValue={note ?? ""} autoComplete="off" />
+      </Field>
+      <Button type="submit" variant="secondary" pending={pending} className="min-w-24 justify-self-start lg:w-full lg:min-w-0">
         저장
-      </button>
+      </Button>
+      <InlineError message={state.error} className="lg:col-span-3" />
     </form>
   );
 }
 
 export function MoveButtons({
-  bookId, partId, first, last,
-}: { bookId: string; partId: string; first: boolean; last: boolean }) {
+  bookId, partId, first, last, className,
+}: { bookId: string; partId: string; first: boolean; last: boolean; className?: string }) {
   const [state, action] = useActionState(
     async (_prev: { error?: string }, dir: "up" | "down") => movePartAction(bookId, partId, dir),
     {},
   );
   const [pending, startTransition] = useTransition();
   const move = (dir: "up" | "down") => startTransition(() => action(dir));
-  const b = "rounded bg-gray-200 px-3 py-2 disabled:opacity-40";
   return (
-    <div className="flex flex-col gap-1">
+    <div className={cx("flex flex-col items-end gap-1", className)}>
       <div className="flex gap-2">
-        <button type="button" aria-label="위로" disabled={pending || first} onClick={() => move("up")} className={b}>
-          ▲
-        </button>
-        <button type="button" aria-label="아래로" disabled={pending || last} onClick={() => move("down")} className={b}>
-          ▼
-        </button>
+        <Button
+          aria-label="위로"
+          disabled={pending || first}
+          aria-busy={pending || undefined}
+          onClick={() => move("up")}
+          square
+        >
+          <ChevronUp />
+        </Button>
+        <Button
+          aria-label="아래로"
+          disabled={pending || last}
+          aria-busy={pending || undefined}
+          onClick={() => move("down")}
+          square
+        >
+          <ChevronDown />
+        </Button>
       </div>
-      <Err message={state.error} />
+      <InlineError message={state.error} className="text-right" />
     </div>
   );
 }
