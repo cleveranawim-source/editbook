@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db";
 import { AppError } from "@/lib/errors";
 import type { Book, BookMember, BookRole, BookStatus, User } from "@/generated/prisma/client";
+import { canViewBook, type Actor } from "@/lib/permissions";
 
 /** 책이 있고 보관되지 않았는지 확인한다. 아니면 AppError. */
 export async function assertBookActive(bookId: string): Promise<void> {
@@ -63,4 +64,32 @@ export async function listAllBooks(): Promise<(Book & { members: (BookMember & {
     orderBy: [{ status: "asc" }, { createdAt: "desc" }],
     include: { members: { include: { user: true } } },
   });
+}
+
+export async function listBooksForUser(userId: string): Promise<
+  { book: Book; role: BookRole; editorNames: string[]; memberCount: number; partCount: number }[]
+> {
+  const rows = await prisma.book.findMany({
+    where: { members: { some: { userId } } },
+    orderBy: [{ status: "asc" }, { createdAt: "desc" }],
+    include: { members: { include: { user: true } }, _count: { select: { parts: true } } },
+  });
+  return rows.map(({ members, _count, ...book }) => ({
+    book,
+    role: members.find((m) => m.userId === userId)!.role,
+    editorNames: members.filter((m) => m.role === "EDITOR").map((m) => m.user.name),
+    memberCount: members.length,
+    partCount: _count.parts,
+  }));
+}
+
+export async function getBookForViewer(
+  bookId: string,
+  actor: Actor,
+): Promise<{ book: Book; role: BookRole | null } | null> {
+  const book = await prisma.book.findUnique({ where: { id: bookId } });
+  if (!book) return null;
+  const role = await getRole(bookId, actor.id);
+  if (!canViewBook(actor, role)) return null;
+  return { book, role };
 }
