@@ -1,18 +1,240 @@
 @import "tailwindcss";
 
-:root {
-  color-scheme: light;
-  --background: #ffffff;
-  --foreground: #171717;
+/*
+ * EditBook — 원고지
+ * 흰 종이 위에 적갈색 200자 원고지 격자. 내용은 흰 카드가 격자를 가리며 앉는다.
+ * 대담함은 두 군데에만 쓴다: 원고지 바탕과 세리프 숫자. 나머지는 조용하고 정확하게.
+ */
+
+@theme {
+  /* 기본 팔레트를 비운다: 이 화면에 없는 색(파랑·회색 계열 등)이 새어 들어오지 못하게. */
+  --color-*: initial;
+  --color-white: #ffffff;
+  --color-black: #000000;
+
+  --color-paper: #ffffff;
+  --color-ink: #1f1f1f;
+  --color-ink-2: #555555; /* 보조 글자, 흰 바탕 7.5:1 */
+  --color-ink-3: #707070; /* 3순위 글자, 흰 바탕 4.95:1 · 틴트 바탕 4.55:1 */
+
+  --color-rb: #b5542a; /* 원고지 적갈색 */
+  --color-rb-tint: #fbf4ef; /* 격자에 물든 종이 */
+  --color-rb-line: rgba(181, 84, 42, 0.45);
+  --color-rule: #e7dcd5; /* 표의 행 구분선 */
+  --color-field: #bfb4ac; /* 입력란 테두리 */
+  --color-quiet: #cccccc; /* 조용한 버튼 테두리 */
+  --color-mine: #fef3f1; /* 내 파트 행 */
+
+  /* 상태 색: 빨강 내 차례 · 노랑 상대 차례 · 초록 완료 · 회색 대기. 늘 글자와 함께 쓴다. */
+  --color-st-red: #d23b2e;
+  --color-st-red-fg: #b3261e; /* 연한 빨강 바탕 위 글자 4.5:1 이상 */
+  --color-st-red-bg: #fdf0ee;
+  --color-st-amber: #d08a00;
+  --color-st-amber-fg: #8a5d00;
+  --color-st-amber-bg: #fff8e8;
+  --color-st-green: #2e7d5b;
+  --color-st-green-bg: #eef7f2;
+  --color-st-gray: #8e8e8e;
+  --color-st-gray-fg: #5c5c5c;
+  --color-st-gray-bg: #f3f3f3;
+
+  --ease-paper: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --default-transition-duration: 150ms;
+  --default-transition-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --font-serif: var(--font-noto-serif-kr), "Apple SD Gothic Neo", serif;
+  --font-sans: var(--font-noto-sans-kr), "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", sans-serif;
+@layer base {
+  :root {
+    --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+    /* 상단 바(56px + 2px 선) 바로 아래에서 격자가 시작한다. */
+    --bar-h: 58px;
+    color-scheme: light;
+    caret-color: var(--color-rb);
+    scrollbar-color: rgba(181, 84, 42, 0.45) transparent;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    font-size: 16px;
+    line-height: 1.5;
+    color: var(--color-ink);
+    font-variant-numeric: tabular-nums;
+    /* 한국어는 어절 단위로 줄을 바꾼다. 긴 영문·아이디만 강제로 끊는다. */
+    word-break: keep-all;
+    overflow-wrap: break-word;
+    -webkit-font-smoothing: antialiased;
+
+    /*
+     * 원고지 바탕: 큰 칸 112px(4칸), 작은 칸 28px.
+     * 격자를 화면 가운데에 맞춰 두면, 1408px 틀(내용 폭 1344px = 큰 칸 12개)의
+     * 양쪽 가장자리가 큰 칸 선 위에 정확히 놓인다.
+     */
+    background-color: #ffffff;
+    background-image:
+      linear-gradient(rgba(181, 84, 42, 0.2) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(181, 84, 42, 0.2) 1px, transparent 1px),
+      linear-gradient(rgba(181, 84, 42, 0.09) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(181, 84, 42, 0.09) 1px, transparent 1px);
+    background-size:
+      112px 112px,
+      112px 112px,
+      28px 28px,
+      28px 28px;
+    background-position:
+      calc(50% + 56px) var(--bar-h),
+      calc(50% + 56px) var(--bar-h),
+      calc(50% + 14px) var(--bar-h),
+      calc(50% + 14px) var(--bar-h);
+    /*
+     * 화면 폭이 홀수(예: 1920px − 윈도우 스크롤바 = 1903px)이면 가운데가 0.5px에 걸려
+     * 선이 2px로 번진다. 정수 픽셀로 올려 맞춘다(가운데 정렬된 틀도 같은 쪽으로 반올림된다).
+     */
+    background-position:
+      round(up, calc(50% + 56px), 1px) var(--bar-h),
+      round(up, calc(50% + 56px), 1px) var(--bar-h),
+      round(up, calc(50% + 14px), 1px) var(--bar-h),
+      round(up, calc(50% + 14px), 1px) var(--bar-h);
+    background-attachment: fixed;
+  }
+
+  @media (max-width: 639px) {
+    body {
+      background-attachment: scroll;
+    }
+  }
+
+  ::selection {
+    background: rgba(181, 84, 42, 0.22);
+    color: inherit;
+  }
+
+  /* 테두리 색을 미리 정해 두면 transition-colors가 포커스 링이 검정에서 적갈색으로 번지지 않는다. */
+  *,
+  ::before,
+  ::after {
+    outline-color: var(--color-rb);
+  }
+  :focus {
+    outline: none;
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-rb);
+    outline-offset: 2px;
+  }
+
+  a {
+    text-underline-offset: 3px;
+    text-decoration-color: rgba(181, 84, 42, 0.6);
+    text-decoration-thickness: 1px;
+  }
+
+  h1,
+  h2,
+  h3 {
+    text-wrap: balance;
+  }
+  p {
+    text-wrap: pretty;
+  }
+
+  button:not(:disabled),
+  select:not(:disabled),
+  [type="checkbox"]:not(:disabled) {
+    cursor: pointer;
+  }
+
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background-color: rgba(181, 84, 42, 0.45);
+    border: 2px solid transparent;
+    background-clip: padding-box;
+  }
+}
+
+@layer components {
+  /* 상표: 원고지 한 칸, 아래 3분의 1이 채워진다. */
+  .brand-mark {
+    display: block;
+    width: 20px;
+    height: 20px;
+    flex: none;
+    border: 2px solid var(--color-rb);
+    background: linear-gradient(to top, var(--color-rb) 5px, transparent 5px);
+  }
+
+  /* 선택 상자: 기본 화살표 대신 1.5px 선으로 그린 꺾쇠. */
+  .select-chevron {
+    appearance: none;
+    padding-right: 40px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8' fill='none'%3E%3Cpath d='M1 1.5l5 5 5-5' stroke='%23555555' stroke-width='1.5' stroke-linecap='square'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    background-size: 12px 8px;
+  }
+
+  /* 눈에 보이는 크기는 작아도 누르는 자리는 44px 이상. */
+  .hit-44::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: max(100%, 44px);
+    height: max(100%, 44px);
+    transform: translate(-50%, -50%);
+  }
+
+  /*
+   * 진행 띠: 원고지 네 칸(원고·검토·확인·완료).
+   * 칸 테두리는 그대로 두고, 채움만 60ms 간격으로 차례대로 번진다 — 이 화면의 유일한 움직임.
+   */
+  .cell {
+    position: relative;
+    display: block;
+    width: 14px;
+    height: 14px;
+    border: 1.5px solid var(--color-rb);
+    background: var(--color-paper);
+  }
+  .cell.fill::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: var(--color-rb);
+    animation: cell-fill 150ms var(--ease) both;
+    animation-delay: calc(var(--i, 0) * 60ms);
+  }
+  .cell.done {
+    border-color: var(--color-st-green);
+  }
+  .cell.done::before {
+    background: var(--color-st-green);
+  }
+}
+
+@keyframes cell-fill {
+  from {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
 }

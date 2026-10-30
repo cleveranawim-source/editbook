@@ -1,17 +1,24 @@
 import type { ReactNode } from "react";
+import { cx } from "@/components/cx";
 
 export type Tone = "red" | "yellow" | "green" | "gray";
 
+/** 빨강 내 차례 · 노랑 상대 차례 · 초록 완료 · 회색 대기. 색만으로 말하지 않고 늘 글자를 함께 쓴다. */
 const TONES: Record<Tone, string> = {
-  red: "bg-red-100 text-red-800",
-  yellow: "bg-amber-100 text-amber-800",
-  green: "bg-green-100 text-green-800",
-  gray: "bg-gray-200 text-gray-700",
+  red: "border-st-red bg-st-red-bg text-st-red-fg",
+  yellow: "border-st-amber bg-st-amber-bg text-st-amber-fg",
+  green: "border-st-green bg-st-green-bg text-st-green",
+  gray: "border-st-gray bg-st-gray-bg text-st-gray-fg",
 };
 
 export function StatusBadge({ tone, children }: { tone: Tone; children: ReactNode }) {
   return (
-    <span className={`inline-block whitespace-nowrap rounded px-2 py-0.5 text-xs font-medium ${TONES[tone]}`}>
+    <span
+      className={cx(
+        "inline-flex items-center whitespace-nowrap border px-[9px] py-[3px] text-[12.5px] font-bold leading-[1.3]",
+        TONES[tone],
+      )}
+    >
       {children}
     </span>
   );
