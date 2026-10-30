@@ -1,0 +1,634 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-30T00:00:00+09:00",
+  "title": "Design System: EditBook",
+  "extensions": {
+    "colorMeta": {
+      "paper": {
+        "role": "neutral",
+        "displayName": "종이",
+        "canonical": "#ffffff",
+        "tonalRamp": [
+          "oklch(18% 0.000 60)",
+          "oklch(28% 0.000 60)",
+          "oklch(38% 0.000 60)",
+          "oklch(48% 0.000 60)",
+          "oklch(58% 0.000 60)",
+          "oklch(70% 0.000 60)",
+          "oklch(82% 0.000 60)",
+          "oklch(95% 0.000 60)"
+        ]
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "잉크",
+        "canonical": "#1f1f1f",
+        "tonalRamp": [
+          "oklch(18% 0.000 60)",
+          "oklch(28% 0.000 60)",
+          "oklch(38% 0.000 60)",
+          "oklch(48% 0.000 60)",
+          "oklch(58% 0.000 60)",
+          "oklch(70% 0.000 60)",
+          "oklch(82% 0.000 60)",
+          "oklch(95% 0.000 60)"
+        ]
+      },
+      "ink-2": {
+        "role": "neutral",
+        "displayName": "잉크 2",
+        "canonical": "#555555",
+        "tonalRamp": [
+          "oklch(18% 0.000 60)",
+          "oklch(28% 0.000 60)",
+          "oklch(38% 0.000 60)",
+          "oklch(48% 0.000 60)",
+          "oklch(58% 0.000 60)",
+          "oklch(70% 0.000 60)",
+          "oklch(82% 0.000 60)",
+          "oklch(95% 0.000 60)"
+        ]
+      },
+      "ink-3": {
+        "role": "neutral",
+        "displayName": "잉크 3",
+        "canonical": "#707070",
+        "tonalRamp": [
+          "oklch(18% 0.000 60)",
+          "oklch(28% 0.000 60)",
+          "oklch(38% 0.000 60)",
+          "oklch(48% 0.000 60)",
+          "oklch(58% 0.000 60)",
+          "oklch(70% 0.000 60)",
+          "oklch(82% 0.000 60)",
+          "oklch(95% 0.000 60)"
+        ]
+      },
+      "rb": {
+        "role": "primary",
+        "displayName": "원고지 적갈색",
+        "canonical": "#b5542a",
+        "tonalRamp": [
+          "oklch(18% 0.059 42)",
+          "oklch(28% 0.098 42)",
+          "oklch(38% 0.130 42)",
+          "oklch(48% 0.130 42)",
+          "oklch(58% 0.130 42)",
+          "oklch(70% 0.130 42)",
+          "oklch(82% 0.098 42)",
+          "oklch(95% 0.059 42)"
+        ]
+      },
+      "rb-tint": {
+        "role": "primary",
+        "displayName": "격자에 물든 종이",
+        "canonical": "#fbf4ef",
+        "tonalRamp": [
+          "oklch(18% 0.013 42)",
+          "oklch(28% 0.022 42)",
+          "oklch(38% 0.030 42)",
+          "oklch(48% 0.030 42)",
+          "oklch(58% 0.030 42)",
+          "oklch(70% 0.030 42)",
+          "oklch(82% 0.022 42)",
+          "oklch(95% 0.013 42)"
+        ]
+      },
+      "rb-line": {
+        "role": "primary",
+        "displayName": "적갈색 옅은 선",
+        "canonical": "rgba(181, 84, 42, 0.45)",
+        "tonalRamp": [
+          "oklch(18% 0.036 42)",
+          "oklch(28% 0.060 42)",
+          "oklch(38% 0.080 42)",
+          "oklch(48% 0.080 42)",
+          "oklch(58% 0.080 42)",
+          "oklch(70% 0.080 42)",
+          "oklch(82% 0.060 42)",
+          "oklch(95% 0.036 42)"
+        ]
+      },
+      "rule": {
+        "role": "neutral",
+        "displayName": "괘선",
+        "canonical": "#e7dcd5",
+        "tonalRamp": [
+          "oklch(18% 0.009 42)",
+          "oklch(28% 0.015 42)",
+          "oklch(38% 0.020 42)",
+          "oklch(48% 0.020 42)",
+          "oklch(58% 0.020 42)",
+          "oklch(70% 0.020 42)",
+          "oklch(82% 0.015 42)",
+          "oklch(95% 0.009 42)"
+        ]
+      },
+      "field": {
+        "role": "neutral",
+        "displayName": "입력란 선",
+        "canonical": "#bfb4ac",
+        "tonalRamp": [
+          "oklch(18% 0.009 42)",
+          "oklch(28% 0.015 42)",
+          "oklch(38% 0.020 42)",
+          "oklch(48% 0.020 42)",
+          "oklch(58% 0.020 42)",
+          "oklch(70% 0.020 42)",
+          "oklch(82% 0.015 42)",
+          "oklch(95% 0.009 42)"
+        ]
+      },
+      "quiet": {
+        "role": "neutral",
+        "displayName": "조용한 선",
+        "canonical": "#cccccc",
+        "tonalRamp": [
+          "oklch(18% 0.000 60)",
+          "oklch(28% 0.000 60)",
+          "oklch(38% 0.000 60)",
+          "oklch(48% 0.000 60)",
+          "oklch(58% 0.000 60)",
+          "oklch(70% 0.000 60)",
+          "oklch(82% 0.000 60)",
+          "oklch(95% 0.000 60)"
+        ]
+      },
+      "mine": {
+        "role": "tertiary",
+        "displayName": "내 차례 행",
+        "canonical": "#fef3f1",
+        "tonalRamp": [
+          "oklch(18% 0.013 25)",
+          "oklch(28% 0.022 25)",
+          "oklch(38% 0.030 25)",
+          "oklch(48% 0.030 25)",
+          "oklch(58% 0.030 25)",
+          "oklch(70% 0.030 25)",
+          "oklch(82% 0.022 25)",
+          "oklch(95% 0.013 25)"
+        ]
+      },
+      "st-red": {
+        "role": "tertiary",
+        "displayName": "내 차례 빨강",
+        "canonical": "#d23b2e",
+        "tonalRamp": [
+          "oklch(18% 0.086 28)",
+          "oklch(28% 0.143 28)",
+          "oklch(38% 0.190 28)",
+          "oklch(48% 0.190 28)",
+          "oklch(58% 0.190 28)",
+          "oklch(70% 0.190 28)",
+          "oklch(82% 0.143 28)",
+          "oklch(95% 0.086 28)"
+        ]
+      },
+      "st-red-fg": {
+        "role": "tertiary",
+        "displayName": "내 차례 빨강 글자",
+        "canonical": "#b3261e",
+        "tonalRamp": [
+          "oklch(18% 0.086 28)",
+          "oklch(28% 0.143 28)",
+          "oklch(38% 0.190 28)",
+          "oklch(48% 0.190 28)",
+          "oklch(58% 0.190 28)",
+          "oklch(70% 0.190 28)",
+          "oklch(82% 0.143 28)",
+          "oklch(95% 0.086 28)"
+        ]
+      },
+      "st-red-bg": {
+        "role": "tertiary",
+        "displayName": "내 차례 빨강 바탕",
+        "canonical": "#fdf0ee",
+        "tonalRamp": [
+          "oklch(18% 0.013 28)",
+          "oklch(28% 0.022 28)",
+          "oklch(38% 0.030 28)",
+          "oklch(48% 0.030 28)",
+          "oklch(58% 0.030 28)",
+          "oklch(70% 0.030 28)",
+          "oklch(82% 0.022 28)",
+          "oklch(95% 0.013 28)"
+        ]
+      },
+      "st-amber": {
+        "role": "tertiary",
+        "displayName": "상대 차례 호박",
+        "canonical": "#d08a00",
+        "tonalRamp": [
+          "oklch(18% 0.072 75)",
+          "oklch(28% 0.120 75)",
+          "oklch(38% 0.160 75)",
+          "oklch(48% 0.160 75)",
+          "oklch(58% 0.160 75)",
+          "oklch(70% 0.160 75)",
+          "oklch(82% 0.120 75)",
+          "oklch(95% 0.072 75)"
+        ]
+      },
+      "st-amber-fg": {
+        "role": "tertiary",
+        "displayName": "상대 차례 호박 글자",
+        "canonical": "#8a5d00",
+        "tonalRamp": [
+          "oklch(18% 0.059 75)",
+          "oklch(28% 0.098 75)",
+          "oklch(38% 0.130 75)",
+          "oklch(48% 0.130 75)",
+          "oklch(58% 0.130 75)",
+          "oklch(70% 0.130 75)",
+          "oklch(82% 0.098 75)",
+          "oklch(95% 0.059 75)"
+        ]
+      },
+      "st-amber-bg": {
+        "role": "tertiary",
+        "displayName": "상대 차례 호박 바탕",
+        "canonical": "#fff8e8",
+        "tonalRamp": [
+          "oklch(18% 0.013 85)",
+          "oklch(28% 0.022 85)",
+          "oklch(38% 0.030 85)",
+          "oklch(48% 0.030 85)",
+          "oklch(58% 0.030 85)",
+          "oklch(70% 0.030 85)",
+          "oklch(82% 0.022 85)",
+          "oklch(95% 0.013 85)"
+        ]
+      },
+      "st-green": {
+        "role": "tertiary",
+        "displayName": "완료 초록",
+        "canonical": "#2e7d5b",
+        "tonalRamp": [
+          "oklch(18% 0.041 160)",
+          "oklch(28% 0.068 160)",
+          "oklch(38% 0.090 160)",
+          "oklch(48% 0.090 160)",
+          "oklch(58% 0.090 160)",
+          "oklch(70% 0.090 160)",
+          "oklch(82% 0.068 160)",
+          "oklch(95% 0.041 160)"
+        ]
+      },
+      "st-green-bg": {
+        "role": "tertiary",
+        "displayName": "완료 초록 바탕",
+        "canonical": "#eef7f2",
+        "tonalRamp": [
+          "oklch(18% 0.009 160)",
+          "oklch(28% 0.015 160)",
+          "oklch(38% 0.020 160)",
+          "oklch(48% 0.020 160)",
+          "oklch(58% 0.020 160)",
+          "oklch(70% 0.020 160)",
+          "oklch(82% 0.015 160)",
+          "oklch(95% 0.009 160)"
+        ]
+      },
+      "st-gray": {
+        "role": "tertiary",
+        "displayName": "대기 회색",
+        "canonical": "#8e8e8e",
+        "tonalRamp": [
+          "oklch(18% 0.000 60)",
+          "oklch(28% 0.000 60)",
+          "oklch(38% 0.000 60)",
+          "oklch(48% 0.000 60)",
+          "oklch(58% 0.000 60)",
+          "oklch(70% 0.000 60)",
+          "oklch(82% 0.000 60)",
+          "oklch(95% 0.000 60)"
+        ]
+      },
+      "st-gray-fg": {
+        "role": "tertiary",
+        "displayName": "대기 회색 글자",
+        "canonical": "#5c5c5c",
+        "tonalRamp": [
+          "oklch(18% 0.000 60)",
+          "oklch(28% 0.000 60)",
+          "oklch(38% 0.000 60)",
+          "oklch(48% 0.000 60)",
+          "oklch(58% 0.000 60)",
+          "oklch(70% 0.000 60)",
+          "oklch(82% 0.000 60)",
+          "oklch(95% 0.000 60)"
+        ]
+      },
+      "st-gray-bg": {
+        "role": "tertiary",
+        "displayName": "대기 회색 바탕",
+        "canonical": "#f3f3f3",
+        "tonalRamp": [
+          "oklch(18% 0.000 60)",
+          "oklch(28% 0.000 60)",
+          "oklch(38% 0.000 60)",
+          "oklch(48% 0.000 60)",
+          "oklch(58% 0.000 60)",
+          "oklch(70% 0.000 60)",
+          "oklch(82% 0.000 60)",
+          "oklch(95% 0.000 60)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "책 화면의 책 제목 한 곳. 768 미만에서는 28px."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "화면 제목(PageHeader)과 AuthCard 제목."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "카드 구역 제목(CardTitle), 책 카드 제목. 관리자 책 목록 링크는 18px."
+      },
+      "numeral": {
+        "displayName": "Numeral",
+        "purpose": "파트 순서 숫자(적갈색). 개수 칩 숫자는 같은 얼굴로 17px, 상태 색. 상단 바 상표는 22px +0.01em."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "본문, 입력란, 사이드바 책 이름. tabular-nums, word-break keep-all."
+      },
+      "body-sm": {
+        "displayName": "Body Small",
+        "purpose": "메타 줄, 담당, 15px 변형은 버튼·상단 바 이름·뒤로 링크·아이디."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "글자표(ink-2), 상태 배지, 꼬리표, 버튼 글자(15px 700)."
+      },
+      "caption": {
+        "displayName": "Caption",
+        "purpose": "표 머리(700, ink-2), 파트 메모, 힌트, 사이드바 상태, sm 버튼. 꼬리표 '내 차례'·'내 파트'만 12.5px."
+      }
+    },
+    "shadows": [],
+    "motion": [
+      {
+        "name": "ease-paper",
+        "value": "cubic-bezier(0.2, 0.8, 0.2, 1)",
+        "purpose": "모든 전환의 기본 easing(--ease-paper, --default-transition-timing-function). 바운스 없음."
+      },
+      {
+        "name": "duration-default",
+        "value": "150ms",
+        "purpose": "기본 transition 길이(--default-transition-duration). 색·테두리·바탕 전환과 진행 띠 채움."
+      },
+      {
+        "name": "cell-fill",
+        "value": "cell-fill 150ms var(--ease) both; animation-delay: calc(var(--i, 0) * 60ms); from { opacity: 0; transform: scale(0.6) }",
+        "purpose": "진행 띠의 채움(::before)만 움직인다. 칸 테두리는 고정. 네 칸 최대 390ms. 유일한 등장 동작."
+      },
+      {
+        "name": "reduced-motion",
+        "value": "@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important } }",
+        "purpose": "움직임 줄이기면 모든 animation·transition 제거, 채운 칸은 바로 그려진다."
+      },
+      {
+        "name": "press",
+        "value": "active:translate-y-px",
+        "purpose": "버튼을 누르면 1px 내려앉는다."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "sm",
+        "value": "640px",
+        "purpose": "상단 바 '관리자' 꼬리표 표시, 바탕 attachment fixed, AuthCard 여백 32px, 빈 상태 가로 배치."
+      },
+      {
+        "name": "md",
+        "value": "768px",
+        "purpose": "좌우 여백 32px, 카드 안 좌우 28px, 책 목록 2열, 책 제목 34px, 양식 띠 가로 배치."
+      },
+      {
+        "name": "lg",
+        "value": "1024px",
+        "purpose": "책 화면 두 열(252px + 1fr), 사이드바 sticky, 표 머리 띠, 62px 고정 행, 정사각 버튼 36px."
+      },
+      {
+        "name": "xl",
+        "value": "1280px",
+        "purpose": "책 목록 3열."
+      },
+      {
+        "name": "min",
+        "value": "360px",
+        "purpose": "가로 스크롤 없음(모든 화면 scrollWidth 360 측정)."
+      }
+    ],
+    "browserSurfaces": [
+      {
+        "name": "selection",
+        "value": "rgba(181, 84, 42, 0.22)",
+        "purpose": "::selection 바탕, 글자색 inherit."
+      },
+      {
+        "name": "caret",
+        "value": "var(--color-rb)",
+        "purpose": "caret-color."
+      },
+      {
+        "name": "focus-ring",
+        "value": "outline: 2px solid var(--color-rb); outline-offset: 2px (:focus-visible); outline-color preset on *, ::before, ::after; :focus { outline: none }",
+        "purpose": "키보드 포커스. transition-colors가 검정에서 번지지 않도록 outline-color를 미리 적갈색으로."
+      },
+      {
+        "name": "scrollbar",
+        "value": "scrollbar-color: rgba(181, 84, 42, 0.45) transparent; ::-webkit-scrollbar 10px, thumb rgba(181,84,42,.45) with 2px transparent border (background-clip: padding-box), track transparent",
+        "purpose": "스크롤바도 적갈색."
+      },
+      {
+        "name": "link-underline",
+        "value": "text-decoration-color: rgba(181, 84, 42, 0.6); text-decoration-thickness: 1px; text-underline-offset: 3px",
+        "purpose": "링크 밑줄."
+      },
+      {
+        "name": "grid-ground",
+        "value": "background: #ffffff; four linear-gradients 112px (rgba(181,84,42,.2)) and 28px (rgba(181,84,42,.09)), 1px lines; background-position round(up, calc(50% + 56px), 1px) var(--bar-h) / round(up, calc(50% + 14px), 1px) var(--bar-h); --bar-h: 58px; background-attachment fixed (scroll < 640px)",
+        "purpose": "원고지 바탕. 화면 가운데 정렬, 정수 픽셀 스냅, 상단 바 바로 아래 시작."
+      },
+      {
+        "name": "color-scheme",
+        "value": "light",
+        "purpose": "밝은 사무실에서 쓰는 화면. 다크 모드 없음."
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "주 버튼",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "잉크 면에 적갈색 밑줄 3px. 로그인·비밀번호 변경·참여자·파트 관리처럼 화면에 하나뿐인 행동.",
+      "html": "<button class=\"ds-btn-primary\">참여자·파트 관리</button>",
+      "css": ".ds-btn-primary{font-family:\"Noto Sans KR\",\"Apple SD Gothic Neo\",\"Malgun Gothic\",sans-serif;display:inline-flex;align-items:center;justify-content:center;gap:8px;white-space:nowrap;line-height:1.25;border-radius:0;cursor:pointer;transition:background-color 150ms cubic-bezier(.2,.8,.2,1),border-color 150ms cubic-bezier(.2,.8,.2,1),color 150ms cubic-bezier(.2,.8,.2,1);min-height:44px;padding:12px 20px 9px;background:var(--color-ink, #1f1f1f);color:#fff;border:0;border-bottom:3px solid var(--color-rb, #b5542a);font-size:15px;font-weight:700}.ds-btn-primary:hover{background:#000}.ds-btn-primary:active{transform:translateY(1px)}.ds-btn-primary:focus-visible{outline:2px solid var(--color-rb, #b5542a);outline-offset:2px}.ds-btn-primary:disabled{opacity:.5;pointer-events:none}"
+    },
+    {
+      "name": "보조 버튼",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "흰 면에 잉크 테두리. 양식 띠의 추가·만들기·저장·보관 등 대부분의 제출.",
+      "html": "<button class=\"ds-btn-secondary\">추가</button>",
+      "css": ".ds-btn-secondary{font-family:\"Noto Sans KR\",\"Apple SD Gothic Neo\",\"Malgun Gothic\",sans-serif;display:inline-flex;align-items:center;justify-content:center;gap:8px;white-space:nowrap;line-height:1.25;border-radius:0;cursor:pointer;transition:background-color 150ms cubic-bezier(.2,.8,.2,1),border-color 150ms cubic-bezier(.2,.8,.2,1),color 150ms cubic-bezier(.2,.8,.2,1);min-height:44px;padding:0 16px;background:var(--color-paper, #ffffff);color:var(--color-ink, #1f1f1f);border:1px solid var(--color-ink, #1f1f1f);font-size:15px;font-weight:700}.ds-btn-secondary:hover{background:var(--color-rb-tint, #fbf4ef)}.ds-btn-secondary:active{transform:translateY(1px)}.ds-btn-secondary:focus-visible{outline:2px solid var(--color-rb, #b5542a);outline-offset:2px}.ds-btn-secondary:disabled{opacity:.5;pointer-events:none}"
+    },
+    {
+      "name": "조용한 버튼(sm)",
+      "kind": "button",
+      "refersTo": "button-quiet-sm",
+      "description": "회색 테두리, 보이는 높이 34px, 누르는 자리 44px. 로그아웃·초기화.",
+      "html": "<button class=\"ds-btn-quiet\">로그아웃</button>",
+      "css": ".ds-btn-quiet{font-family:\"Noto Sans KR\",\"Apple SD Gothic Neo\",\"Malgun Gothic\",sans-serif;display:inline-flex;align-items:center;justify-content:center;gap:8px;white-space:nowrap;line-height:1.25;border-radius:0;cursor:pointer;transition:background-color 150ms cubic-bezier(.2,.8,.2,1),border-color 150ms cubic-bezier(.2,.8,.2,1),color 150ms cubic-bezier(.2,.8,.2,1);position:relative;min-height:34px;padding:0 12px;background:var(--color-paper, #ffffff);color:var(--color-ink-2, #555555);border:1px solid var(--color-quiet, #cccccc);font-size:13px;font-weight:500}.ds-btn-quiet::after{content:'';position:absolute;left:50%;top:50%;width:max(100%,44px);height:max(100%,44px);transform:translate(-50%,-50%)}.ds-btn-quiet:hover{border-color:var(--color-ink-3, #707070);color:var(--color-ink, #1f1f1f)}.ds-btn-quiet:focus-visible{outline:2px solid var(--color-rb, #b5542a);outline-offset:2px}"
+    },
+    {
+      "name": "조용한 위험 버튼",
+      "kind": "button",
+      "refersTo": "button-quiet-danger",
+      "description": "목록마다 되풀이되는 '제거'. 평소엔 회색 테두리에 빨강 글자, 손이 가면 빨강 테두리와 바탕.",
+      "html": "<button class=\"ds-btn-quiet-danger\">제거</button>",
+      "css": ".ds-btn-quiet-danger{font-family:\"Noto Sans KR\",\"Apple SD Gothic Neo\",\"Malgun Gothic\",sans-serif;display:inline-flex;align-items:center;justify-content:center;gap:8px;white-space:nowrap;line-height:1.25;border-radius:0;cursor:pointer;transition:background-color 150ms cubic-bezier(.2,.8,.2,1),border-color 150ms cubic-bezier(.2,.8,.2,1),color 150ms cubic-bezier(.2,.8,.2,1);position:relative;min-height:34px;padding:0 12px;background:var(--color-paper, #ffffff);color:var(--color-st-red-fg, #b3261e);border:1px solid var(--color-quiet, #cccccc);font-size:13px;font-weight:700}.ds-btn-quiet-danger::after{content:'';position:absolute;left:50%;top:50%;width:max(100%,44px);height:max(100%,44px);transform:translate(-50%,-50%)}.ds-btn-quiet-danger:hover{border-color:var(--color-st-red, #d23b2e);background:var(--color-st-red-bg, #fdf0ee)}.ds-btn-quiet-danger:focus-visible{outline:2px solid var(--color-rb, #b5542a);outline-offset:2px}"
+    },
+    {
+      "name": "글자표 + 입력란",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "라벨이 입력란을 감싼다. 16px, 44px, 입력란 선 #bfb4ac, 포커스 적갈색, 오류 빨강.",
+      "html": "<label class=\"ds-field\"><span class=\"ds-field-label\">아이디</span><input class=\"ds-input\" placeholder=\"예: teacher1\"></label>",
+      "css": ".ds-field{display:flex;flex-direction:column;gap:6px;font-family:\"Noto Sans KR\",\"Apple SD Gothic Neo\",\"Malgun Gothic\",sans-serif;color:var(--color-ink, #1f1f1f)}.ds-field-label{font-size:14px;font-weight:700;color:var(--color-ink-2, #555555)}.ds-input{display:block;width:100%;min-height:44px;padding:10px 12px;border:1px solid var(--color-field, #bfb4ac);border-radius:0;background:var(--color-paper, #ffffff);color:var(--color-ink, #1f1f1f);font:inherit;font-size:16px;line-height:1.5;caret-color:var(--color-rb, #b5542a);transition:border-color 150ms cubic-bezier(.2,.8,.2,1)}.ds-input::placeholder{color:var(--color-ink-3, #707070)}.ds-input:hover{border-color:var(--color-ink-3, #707070)}.ds-input:focus{outline:none;border-color:var(--color-rb, #b5542a)}.ds-input:focus-visible{outline:2px solid var(--color-rb, #b5542a);outline-offset:2px}.ds-input[aria-invalid=true]{border-color:var(--color-st-red, #d23b2e)}.ds-input:disabled{cursor:not-allowed;border-color:var(--color-rule, #e7dcd5);background:var(--color-rb-tint, #fbf4ef);color:var(--color-ink-3, #707070)}"
+    },
+    {
+      "name": "상태 배지",
+      "kind": "chip",
+      "refersTo": "status-badge-red",
+      "description": "네 가지 뜻이 고정된 상태 색. 1px 톤 테두리, 톤 바탕, 톤 글자, 14px 700, 점 없음.",
+      "html": "<span class=\"ds-badge ds-badge-red\">요청 2</span> <span class=\"ds-badge ds-badge-yellow\">편집장 검토 중</span> <span class=\"ds-badge ds-badge-green\">완료</span> <span class=\"ds-badge ds-badge-gray\">원고 없음</span>",
+      "css": ".ds-badge{font-family:\"Noto Sans KR\",\"Apple SD Gothic Neo\",\"Malgun Gothic\",sans-serif;display:inline-flex;align-items:center;white-space:nowrap;border:1px solid;border-radius:0;padding:2px 8px;font-size:14px;font-weight:700;line-height:1.35}.ds-badge-red{border-color:var(--color-st-red, #d23b2e);background:var(--color-st-red-bg, #fdf0ee);color:var(--color-st-red-fg, #b3261e)}.ds-badge-yellow{border-color:var(--color-st-amber, #d08a00);background:var(--color-st-amber-bg, #fff8e8);color:var(--color-st-amber-fg, #8a5d00)}.ds-badge-green{border-color:var(--color-st-green, #2e7d5b);background:var(--color-st-green-bg, #eef7f2);color:var(--color-st-green, #2e7d5b)}.ds-badge-gray{border-color:var(--color-st-gray, #8e8e8e);background:var(--color-st-gray-bg, #f3f3f3);color:var(--color-st-gray-fg, #5c5c5c)}"
+    },
+    {
+      "name": "꼬리표(역할·내 차례·내 파트)",
+      "kind": "chip",
+      "refersTo": "tag",
+      "description": "Tag는 상태 색을 쓰지 않는 중립 표시(틴트 + 옅은 적갈색 선). TurnTag '내 차례'만 빨강 면, '내 파트'는 틴트.",
+      "html": "<span class=\"ds-tag\">편집장</span> <span class=\"ds-tag ds-tag-soft\">교사</span> <span class=\"ds-turn\">내 차례</span> <span class=\"ds-turn-mine\">내 파트</span>",
+      "css": ".ds-tag,.ds-turn,.ds-turn-mine{font-family:\"Noto Sans KR\",\"Apple SD Gothic Neo\",\"Malgun Gothic\",sans-serif;display:inline-flex;align-items:center;white-space:nowrap;border-radius:0;font-weight:700;line-height:1.35}.ds-tag{border:1px solid var(--color-rb-line, rgba(181,84,42,.45));background:var(--color-rb-tint, #fbf4ef);color:var(--color-ink, #1f1f1f);padding:2px 8px;font-size:14px}.ds-tag-soft{color:var(--color-ink-2, #555555)}.ds-turn{background:var(--color-st-red, #d23b2e);color:#fff;padding:1px 7px;font-size:12.5px}.ds-turn-mine{border:1px solid var(--color-rb-line, rgba(181,84,42,.45));background:var(--color-rb-tint, #fbf4ef);color:var(--color-ink-2, #555555);padding:1px 7px;font-size:12.5px}"
+    },
+    {
+      "name": "진행 띠",
+      "kind": "custom",
+      "refersTo": "progress-cell",
+      "description": "원고·검토·확인·완료 네 칸. 채움만 60ms 간격으로 150ms에 번진다. 완료는 초록. 이 세계의 유일한 움직임.",
+      "html": "<span class=\"ds-strip\" role=\"img\" aria-label=\"진행 2/4\"><span class=\"ds-cell ds-cell-fill\" style=\"--i:0\"></span><span class=\"ds-cell ds-cell-fill\" style=\"--i:1\"></span><span class=\"ds-cell\"></span><span class=\"ds-cell\"></span></span> <span class=\"ds-strip\" role=\"img\" aria-label=\"진행 4/4\"><span class=\"ds-cell ds-cell-fill ds-cell-done\" style=\"--i:0\"></span><span class=\"ds-cell ds-cell-fill ds-cell-done\" style=\"--i:1\"></span><span class=\"ds-cell ds-cell-fill ds-cell-done\" style=\"--i:2\"></span><span class=\"ds-cell ds-cell-fill ds-cell-done\" style=\"--i:3\"></span></span>",
+      "css": ".ds-strip{display:inline-flex;align-items:center;gap:3px;margin-right:16px}.ds-cell{position:relative;display:block;width:14px;height:14px;border:1.5px solid var(--color-rb, #b5542a);background:var(--color-paper, #ffffff);box-sizing:border-box}.ds-cell-fill::before{content:'';position:absolute;inset:0;background:var(--color-rb, #b5542a);animation:ds-cell-fill 150ms cubic-bezier(.2,.8,.2,1) both;animation-delay:calc(var(--i,0) * 60ms)}.ds-cell-done{border-color:var(--color-st-green, #2e7d5b)}.ds-cell-done::before{background:var(--color-st-green, #2e7d5b)}@keyframes ds-cell-fill{from{opacity:0;transform:scale(.6)}}@media (prefers-reduced-motion:reduce){.ds-cell-fill::before{animation:none}}"
+    },
+    {
+      "name": "카드 + 표 머리 + 파트 행",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "격자 위 흰 종이. 모서리 0, 그림자 없음, 1px 적갈색 옅은 선. 40px 틴트 머리 띠, 62px 행, 세리프 적갈색 순서, 호버는 괘선이 진해진다.",
+      "html": "<div class=\"ds-card\"><div class=\"ds-thead\"><span style=\"text-align:center\">순서</span><span>파트</span><span>담당</span><span>진행</span><span>상태</span></div><ul class=\"ds-rows\"><li class=\"ds-row\"><span class=\"ds-num\">1</span><span class=\"ds-row-title\">1단원 종교란 무엇인가</span><span class=\"ds-row-who\">김교사</span><span class=\"ds-strip\"><span class=\"ds-cell\"></span><span class=\"ds-cell\"></span><span class=\"ds-cell\"></span><span class=\"ds-cell\"></span></span><span class=\"ds-badge ds-badge-gray\">원고 없음</span></li><li class=\"ds-row ds-row-mine\"><span class=\"ds-num\">2</span><span class=\"ds-row-title\">2단원 삶과 죽음 <span class=\"ds-turn\">내 차례</span></span><span class=\"ds-row-who ds-none\">담당 없음</span><span class=\"ds-strip\"><span class=\"ds-cell ds-cell-fill\"></span><span class=\"ds-cell ds-cell-fill\"></span><span class=\"ds-cell\"></span><span class=\"ds-cell\"></span></span><span class=\"ds-badge ds-badge-red\">요청 2</span></li></ul></div>",
+      "css": ".ds-card{font-family:\"Noto Sans KR\",\"Apple SD Gothic Neo\",\"Malgun Gothic\",sans-serif;color:var(--color-ink, #1f1f1f);background:var(--color-paper, #ffffff);border:1px solid var(--color-rb-line, rgba(181,84,42,.45));border-radius:0}.ds-thead{display:grid;grid-template-columns:56px minmax(0,1fr) 128px 150px 236px;align-items:center;height:40px;padding-right:24px;background:var(--color-rb-tint, #fbf4ef);border-bottom:1px solid var(--color-rb-line, rgba(181,84,42,.45));font-size:13px;font-weight:700;color:var(--color-ink-2, #555555)}.ds-rows{list-style:none;margin:0;padding:0}.ds-row{display:grid;grid-template-columns:56px minmax(0,1fr) 128px 150px 236px;align-items:center;height:62px;padding-right:24px;border-bottom:1px solid var(--color-rule, #e7dcd5);transition:border-color 150ms cubic-bezier(.2,.8,.2,1)}.ds-row:last-child{border-bottom:0}.ds-row:hover,.ds-row:has(+ .ds-row:hover){border-bottom-color:var(--color-rb, #b5542a)}.ds-row-mine{background:var(--color-mine, #fef3f1)}.ds-num{font-family:\"Noto Serif KR\",\"Apple SD Gothic Neo\",serif;font-size:22px;font-weight:900;line-height:1.1;color:var(--color-rb, #b5542a);text-align:center}.ds-row-title{font-size:17px;font-weight:700;line-height:1.375;padding-right:20px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}.ds-row-who{font-size:14px}.ds-none{color:var(--color-ink-3, #707070)}.ds-strip{display:inline-flex;gap:3px}.ds-cell{position:relative;display:block;width:14px;height:14px;border:1.5px solid var(--color-rb, #b5542a);background:var(--color-paper, #ffffff);box-sizing:border-box}.ds-cell-fill::before{content:'';position:absolute;inset:0;background:var(--color-rb, #b5542a)}.ds-turn{display:inline-flex;background:var(--color-st-red, #d23b2e);color:#fff;padding:1px 7px;font-size:12.5px;font-weight:700;line-height:1.35;margin-left:8px;vertical-align:2px}.ds-badge{display:inline-flex;border:1px solid;padding:2px 8px;font-size:14px;font-weight:700;line-height:1.35;white-space:nowrap}.ds-badge-gray{border-color:var(--color-st-gray, #8e8e8e);background:var(--color-st-gray-bg, #f3f3f3);color:var(--color-st-gray-fg, #5c5c5c)}.ds-badge-red{border-color:var(--color-st-red, #d23b2e);background:var(--color-st-red-bg, #fdf0ee);color:var(--color-st-red-fg, #b3261e)}"
+    },
+    {
+      "name": "상단 바 + 내 책 목록",
+      "kind": "nav",
+      "refersTo": "top-bar",
+      "description": "56px 흰 바 + 2px 적갈색 선, 원고지 한 칸 상표와 세리프 'EditBook'. 내 책 카드는 현재 책에 10px 채운 네모·굵게·틴트.",
+      "html": "<header class=\"ds-bar\"><a class=\"ds-brand\" href=\"#\"><span class=\"ds-mark\"></span>EditBook</a><span class=\"ds-bar-right\"><b>박편집</b><button class=\"ds-btn-quiet\">로그아웃</button></span></header><nav class=\"ds-booknav\" aria-label=\"내 책\"><h2>내 책</h2><a class=\"ds-booknav-item ds-current\" href=\"#\" aria-current=\"page\"><span class=\"ds-dot\"></span><span><span class=\"ds-booknav-title\">중학교 종교 1</span><span class=\"ds-booknav-status\">진행 중</span></span></a><a class=\"ds-booknav-item\" href=\"#\"><span class=\"ds-dot\"></span><span><span class=\"ds-booknav-title\">중학교 종교 2</span><span class=\"ds-booknav-status\">보관됨</span></span></a></nav>",
+      "css": ".ds-bar{font-family:\"Noto Sans KR\",\"Apple SD Gothic Neo\",\"Malgun Gothic\",sans-serif;display:flex;align-items:center;justify-content:space-between;height:58px;padding:0 32px;background:var(--color-paper, #ffffff);border-bottom:2px solid var(--color-rb, #b5542a);color:var(--color-ink, #1f1f1f)}.ds-brand{display:inline-flex;align-items:center;gap:10px;min-height:44px;font-family:\"Noto Serif KR\",\"Apple SD Gothic Neo\",serif;font-size:22px;font-weight:900;letter-spacing:.01em;line-height:1;color:var(--color-ink, #1f1f1f);text-decoration:none}.ds-mark{display:block;width:20px;height:20px;border:2px solid var(--color-rb, #b5542a);background:linear-gradient(to top,var(--color-rb, #b5542a) 5px,transparent 5px);box-sizing:border-box}.ds-bar-right{display:inline-flex;align-items:center;gap:12px;font-size:15px}.ds-btn-quiet{font-family:\"Noto Sans KR\",\"Apple SD Gothic Neo\",\"Malgun Gothic\",sans-serif;display:inline-flex;align-items:center;justify-content:center;gap:8px;white-space:nowrap;line-height:1.25;border-radius:0;cursor:pointer;transition:background-color 150ms cubic-bezier(.2,.8,.2,1),border-color 150ms cubic-bezier(.2,.8,.2,1),color 150ms cubic-bezier(.2,.8,.2,1);min-height:34px;padding:0 12px;background:var(--color-paper, #ffffff);color:var(--color-ink-2, #555555);border:1px solid var(--color-quiet, #cccccc);font-size:13px;font-weight:500}.ds-btn-quiet:hover{border-color:var(--color-ink-3, #707070);color:var(--color-ink, #1f1f1f)}.ds-booknav{font-family:\"Noto Sans KR\",\"Apple SD Gothic Neo\",\"Malgun Gothic\",sans-serif;width:252px;margin-top:28px;padding:16px 0;background:var(--color-paper, #ffffff);border:1px solid var(--color-rb-line, rgba(181,84,42,.45));color:var(--color-ink, #1f1f1f)}.ds-booknav h2{margin:0;padding:0 20px 8px;font-size:14px;font-weight:700;color:var(--color-ink-2, #555555)}.ds-booknav-item{display:flex;align-items:flex-start;gap:10px;min-height:48px;padding:10px 20px;color:var(--color-ink, #1f1f1f);text-decoration:none;transition:background-color 150ms cubic-bezier(.2,.8,.2,1)}.ds-booknav-item:hover,.ds-current{background:var(--color-rb-tint, #fbf4ef)}.ds-dot{width:10px;height:10px;margin-top:7px;flex:none}.ds-current .ds-dot{background:var(--color-rb, #b5542a)}.ds-booknav-title{display:block;line-height:1.375}.ds-current .ds-booknav-title{font-weight:700}.ds-booknav-status{display:block;margin-top:2px;font-size:13px;color:var(--color-ink-3, #707070)}.ds-booknav-item:focus-visible,.ds-brand:focus-visible{outline:2px solid var(--color-rb, #b5542a);outline-offset:2px}"
+    },
+    {
+      "name": "빈 상태(box)",
+      "kind": "custom",
+      "refersTo": "empty-state-box",
+      "description": "아직 채워지지 않은 종이: 점선 칸이 격자 위에 카드 대신 놓인다. 한 문장과 할 일 하나.",
+      "html": "<div class=\"ds-empty\"><p>아직 파트가 없습니다. 참여자·파트 관리에서 첫 파트를 추가하세요.</p><button class=\"ds-btn-secondary\">파트 추가하기</button></div>",
+      "css": ".ds-empty{font-family:\"Noto Sans KR\",\"Apple SD Gothic Neo\",\"Malgun Gothic\",sans-serif;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:24px 28px;border:1px dashed var(--color-rb-line, rgba(181,84,42,.45));background:var(--color-paper, #ffffff);color:var(--color-ink-2, #555555)}.ds-empty p{margin:0;max-width:60ch;font-size:16px;line-height:1.5}.ds-btn-secondary{font-family:\"Noto Sans KR\",\"Apple SD Gothic Neo\",\"Malgun Gothic\",sans-serif;display:inline-flex;align-items:center;justify-content:center;gap:8px;white-space:nowrap;line-height:1.25;border-radius:0;cursor:pointer;transition:background-color 150ms cubic-bezier(.2,.8,.2,1),border-color 150ms cubic-bezier(.2,.8,.2,1),color 150ms cubic-bezier(.2,.8,.2,1);flex:none;min-height:44px;padding:0 16px;background:var(--color-paper, #ffffff);color:var(--color-ink, #1f1f1f);border:1px solid var(--color-ink, #1f1f1f);font-size:15px;font-weight:700}.ds-btn-secondary:hover{background:var(--color-rb-tint, #fbf4ef)}"
+    }
+  ],
+  "narrative": {
+    "northStar": "원고지 위의 책상",
+    "overview": "EditBook은 원고를 다루는 책상이다. 화면 바탕은 흰 종이에 적갈색 200자 원고지 격자가 흐리게 깔린 것이고, 모든 내용은 그 위에 놓인 흰 종이 한 장(카드)이다. 격자는 장식이 아니라 자(尺)다: 큰 칸 112px, 작은 칸 28px이 화면 가운데에 맞춰 깔리고, 1408px 틀(내용 폭 1344px = 큰 칸 12개)의 카드 가장자리가 큰 칸 선 위에 정확히 놓인다. 카드 사이 간격도 작은 칸 하나(28px)다.\n\n대담함은 두 군데에만 쓴다. 원고지 바탕과 세리프 숫자(파트 순서, 개수 칩)다. 나머지는 조용하고 정확하다: 모서리는 둥글지 않고, 그림자는 없고, 선은 1px 적갈색 틴트다. 색은 의미가 있을 때만 쓴다. 상태 색 네 가지(빨강 내 차례·노랑 상대 차례·초록 완료·회색 대기)는 뜻이 고정되어 있고 늘 글자와 함께 쓴다. 적갈색 틴트(rb-tint)는 \"격자에 물든 종이\"이지 상태가 아니다.\n\n사용자 다수가 40~50대 교사이므로 본문은 16px 이상, 가장 작은 글자도 12.5px 아래로 내려가지 않고, 누르는 자리는 44px 이상이다. 회색 표에 파란 버튼을 얹은 행정 시스템의 배치는 거부한다.",
+    "keyCharacteristics": [
+      "흰 종이(#ffffff) 위 적갈색 원고지 격자(112/28px), 카드 가장자리가 큰 칸 선에 정렬",
+      "모서리 0px, 그림자 없음, 1px 적갈색 틴트 선으로만 구획",
+      "세리프 900 적갈색 숫자와 세리프 제목, 산세리프 UI, tabular 숫자",
+      "상태 색 네 가지 뜻 고정, 빨강 계열은 \"내 차례\"에만",
+      "유일한 움직임: 진행 띠의 칸 채움(150ms, 60ms 간격)",
+      "포커스 링·캐럿·선택 색·스크롤바가 모두 적갈색"
+    ],
+    "rules": [
+      {
+        "name": "The Four Meanings Rule",
+        "body": "빨강은 내 차례, 노랑은 상대 차례, 초록은 완료, 회색은 대기다. 이 뜻 밖에서 상태 색을 쓰지 않는다. 그래서 관리자 책 목록의 \"진행 중\"은 초록이 아니라 중립 꼬리표(rb-tint)다. 색은 늘 글자와 함께 쓴다.",
+        "section": "colors"
+      },
+      {
+        "name": "The Red Is Mine Rule",
+        "body": "연한 붉은 바탕(mine)과 빨간 \"내 차례\" 꼬리표는 내 차례(REQUESTS) 행에만 붙는다. 내가 담당이지만 내 차례가 아닌 행은 틴트 \"내 파트\" 꼬리표만 받고 바탕은 흰 종이 그대로다.",
+        "section": "colors"
+      },
+      {
+        "name": "The Tint Is Not Status Rule",
+        "body": "rb-tint는 격자에 물든 종이다. 표 머리, 추가 띠, 역할 꼬리표, 현재 책, 호버에 쓰되 어떤 진행 상태도 뜻하지 않는다.",
+        "section": "colors"
+      },
+      {
+        "name": "The One Accent Rule",
+        "body": "적갈색은 격자·숫자·선·브라우저 표면(포커스·캐럿·선택·스크롤바)에만 산다. 버튼 면이나 큰 면적의 채움으로 쓰지 않는다. 주 버튼은 잉크 면에 적갈색 밑줄이다.",
+        "section": "colors"
+      },
+      {
+        "name": "The Serif Numeral Rule",
+        "body": "순서와 개수는 세리프 900으로 쓴다. 파트 순서는 적갈색, 개수 칩의 숫자는 그 칩의 상태 색이다. 이것이 머리말까지 이어지는 이 세계의 서명이다.",
+        "section": "typography"
+      },
+      {
+        "name": "The 12.5 Floor Rule",
+        "body": "가장 작은 글자는 12.5px(꼬리표)이고 그 외는 13px 이상이다. 표 머리 13px, 배지·꼬리표 14px, 본문 16px. 더 작게 내리지 않는다.",
+        "section": "typography"
+      },
+      {
+        "name": "The Paper On Grid Rule",
+        "body": "깊이는 한 겹뿐이다. 격자 위 종이. 그림자·블러·떠오름 호버를 쓰지 않고, 호버는 선이 진해지는 것으로 말한다.",
+        "section": "elevation"
+      },
+      {
+        "name": "The No Nested Box Rule",
+        "body": "카드 안에 테두리 상자를 넣지 않는다. 빈 상태는 카드를 대신하거나(box), 카드 안에서는 괘선만 남긴다(inline).",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do 카드 사이와 본문 위 간격을 28px(작은 칸 하나)로 두고, 큰 틀은 1408px·1064px·392px·252px처럼 28px의 배수로 잡아 카드 가장자리를 격자선에 맞춘다.",
+      "Do 순서와 개수는 Noto Serif KR 900으로, 파트 순서는 rb(#b5542a)로 쓴다.",
+      "Do 상태는 StatusBadge·CountChip·ProgressStrip에 네 가지 뜻(빨강 내 차례·노랑 상대 차례·초록 완료·회색 대기)으로만 쓰고 늘 글자를 함께 둔다.",
+      "Do 연한 바탕 위 빨강 글자는 st-red-fg(#b3261e), 호박 글자는 st-amber-fg(#8a5d00)를 쓴다.",
+      "Do 호버는 선이 진해지는 것으로 말한다: 카드 테두리 rb-line → rb, 행 괘선 rule → rb, 150ms.",
+      "Do 모든 전환은 150ms `cubic-bezier(.2,.8,.2,1)`, 등장 동작은 ProgressStrip 채움만.",
+      "Do 보이는 높이가 34·36px인 컨트롤에도 `.hit-44`로 44px 누르는 자리를 준다.",
+      "Do 본문 16px, 가장 작은 글자 12.5px(꼬리표)·13px(표 머리·메모) 이상을 지킨다.",
+      "Do 아이콘은 1.5px 선 꺾쇠 SVG(`icons.tsx`)로 그리고 `currentColor`를 따른다.",
+      "Do 빈 상태는 카드를 대신하거나(box) 카드 안에서는 괘선만 남긴다(inline)."
+    ],
+    "donts": [
+      "Don't 그림자(box-shadow), 블러, 떠오름(translateY) 호버를 쓰지 않는다. 깊이는 격자 위 종이 한 겹뿐이다.",
+      "Don't 모서리를 둥글리지 않는다(`rounded-*` 금지).",
+      "Don't 왼쪽 색 막대(border-left)로 상태나 현재 항목을 표시하지 않는다. 현재 책은 10px 채운 네모와 틴트다.",
+      "Don't 제목 위 작은 대문자·자간 넓은 눈썹(eyebrow/kicker), `uppercase`, 넓은 `letter-spacing`을 쓰지 않는다.",
+      "Don't 유니코드 글리프(▲▼→✓× 등)를 아이콘으로 쓰지 않는다.",
+      "Don't 빨강 계열 바탕(mine, st-red-bg)을 내 차례 행과 오류 밖에서 쓰지 않는다. 초록을 \"진행 중\"에 쓰지 않는다(초록은 완료).",
+      "Don't 상태 배지에 점(dot)을 붙이거나 색만으로 뜻을 전하지 않는다.",
+      "Don't 적갈색을 버튼 면이나 큰 면적의 채움으로 쓰지 않는다. 주 버튼은 잉크 면 + 적갈색 밑줄 3px이다.",
+      "Don't Tailwind 기본 팔레트(gray-*, blue-* 등)를 쓰지 않는다. `--color-*: initial`로 비워져 있어 렌더링되지 않는다.",
+      "Don't 글자가 있는 요소에 `opacity`로 흐림을 주지 않는다. 보관된 카드는 바탕만 paper 60%다.",
+      "Don't 카드 안에 테두리 상자를 중첩하지 않는다."
+    ]
+  }
+}
