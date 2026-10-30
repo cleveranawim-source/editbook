@@ -22,6 +22,7 @@ export function canEditPart(
 ): boolean {
   return (
     bookStatus === "ACTIVE" &&
+    role !== null &&
     (role === "EDITOR" || part.assigneeUserId === actor.id)
   );
 }

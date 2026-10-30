@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useRef } from "react";
+import { useActionState, useEffect, useRef, useTransition } from "react";
 import {
   addMemberAction, createPartAction, movePartAction, removeMemberAction, updatePartAction,
 } from "./actions";
@@ -135,21 +135,47 @@ export function AssigneeForm({
   );
 }
 
+export function PartEditForm({
+  bookId, partId, title, note,
+}: { bookId: string; partId: string; title: string; note: string | null }) {
+  const [state, action, pending] = useActionState(updatePartAction, {});
+  return (
+    <form action={action} className="flex flex-col gap-2">
+      <input type="hidden" name="bookId" value={bookId} />
+      <input type="hidden" name="partId" value={partId} />
+      <label className="flex flex-col gap-1 text-sm">
+        제목
+        <input name="title" required defaultValue={title} autoComplete="off" className={input} />
+      </label>
+      <label className="flex flex-col gap-1 text-sm">
+        메모
+        <textarea name="note" rows={2} defaultValue={note ?? ""} className={input} />
+      </label>
+      <Err message={state.error} />
+      <button type="submit" disabled={pending} className={btn}>
+        저장
+      </button>
+    </form>
+  );
+}
+
 export function MoveButtons({
   bookId, partId, first, last,
 }: { bookId: string; partId: string; first: boolean; last: boolean }) {
-  const [state, action, pending] = useActionState(
+  const [state, action] = useActionState(
     async (_prev: { error?: string }, dir: "up" | "down") => movePartAction(bookId, partId, dir),
     {},
   );
+  const [pending, startTransition] = useTransition();
+  const move = (dir: "up" | "down") => startTransition(() => action(dir));
   const b = "rounded bg-gray-200 px-3 py-2 disabled:opacity-40";
   return (
     <div className="flex flex-col gap-1">
       <div className="flex gap-2">
-        <button type="button" aria-label="위로" disabled={pending || first} onClick={() => action("up")} className={b}>
+        <button type="button" aria-label="위로" disabled={pending || first} onClick={() => move("up")} className={b}>
           ▲
         </button>
-        <button type="button" aria-label="아래로" disabled={pending || last} onClick={() => action("down")} className={b}>
+        <button type="button" aria-label="아래로" disabled={pending || last} onClick={() => move("down")} className={b}>
           ▼
         </button>
       </div>

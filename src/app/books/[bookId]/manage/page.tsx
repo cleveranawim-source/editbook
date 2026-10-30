@@ -6,7 +6,7 @@ import { getRole } from "@/lib/books";
 import { listParts } from "@/lib/parts";
 import { canManageBook } from "@/lib/permissions";
 import { listUsers } from "@/lib/users";
-import { AddMemberForm, AssigneeForm, CreatePartForm, MoveButtons, RemoveMemberForm } from "./forms";
+import { AddMemberForm, AssigneeForm, CreatePartForm, MoveButtons, PartEditForm, RemoveMemberForm } from "./forms";
 
 export default async function ManagePage({ params }: { params: Promise<{ bookId: string }> }) {
   const { bookId } = await params;
@@ -63,6 +63,7 @@ export default async function ManagePage({ params }: { params: Promise<{ bookId:
                 <span className="min-w-0 break-words font-semibold">{p.title}</span>
               </div>
               {p.note && <p className="break-words text-sm text-gray-600">{p.note}</p>}
+              <PartEditForm bookId={bookId} partId={p.id} title={p.title} note={p.note || null} />
               <AssigneeForm bookId={bookId} partId={p.id} assigneeUserId={p.assigneeUserId} members={memberOpts} />
               <MoveButtons bookId={bookId} partId={p.id} first={i === 0} last={i === parts.length - 1} />
             </li>

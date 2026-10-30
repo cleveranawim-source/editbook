@@ -4,6 +4,8 @@ import {
   addMember, assertBookActive, createBook, getRole, listAllBooks, removeMember, setBookStatus,
 } from "@/lib/books";
 import { AppError } from "@/lib/errors";
+import { createPart } from "@/lib/parts";
+import { prisma } from "@/lib/db";
 import { resetDb } from "../helpers/db";
 
 async function user(id: string, name = id) {
@@ -72,4 +74,17 @@ test("listAllBooks orders ACTIVE first then newest, includes members.user", asyn
   expect(list[0].members[0].user.name).toBe("편집");
   await setBookStatus(b.id, "ACTIVE");
   expect((await listAllBooks()).map((x) => x.id)).toEqual([c.id, b.id, a.id]);
+});
+
+test("removeMember clears the removed member's part assignments", async () => {
+  await resetDb();
+  const e = await user("e2");
+  const w = await user("w2");
+  const b = await createBook({ title: "책", editorUserId: e.id });
+  await addMember(b.id, w.id, "AUTHOR");
+  const part = await createPart({ bookId: b.id, title: "1장", assigneeUserId: w.id });
+  expect(part.assigneeUserId).toBe(w.id);
+  await removeMember(b.id, w.id);
+  const after = await prisma.part.findUnique({ where: { id: part.id } });
+  expect(after?.assigneeUserId).toBeNull();
 });

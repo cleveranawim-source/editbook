@@ -50,6 +50,7 @@ export async function removeMember(bookId: string, userId: string): Promise<void
       const editors = await tx.bookMember.count({ where: { bookId, role: "EDITOR" } });
       if (editors <= 1) throw new AppError("편집장은 한 명 이상 있어야 합니다.");
     }
+    await tx.part.updateMany({ where: { bookId, assigneeUserId: userId }, data: { assigneeUserId: null } });
     await tx.bookMember.delete({ where: { bookId_userId: { bookId, userId } } });
   });
 }

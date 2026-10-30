@@ -62,7 +62,11 @@ export async function updatePartAction(_prev: ActionState, formData: FormData): 
   return run(bookId, async () => {
     const part = await prisma.part.findUnique({ where: { id: partId } });
     if (!part || part.bookId !== bookId) throw new AppError("파트를 찾을 수 없습니다.");
-    await updatePart(partId, { assigneeUserId: str(formData, "assigneeUserId") || null });
+    const data: { assigneeUserId?: string | null; title?: string; note?: string } = {};
+    if (formData.has("assigneeUserId")) data.assigneeUserId = str(formData, "assigneeUserId") || null;
+    if (formData.has("title")) data.title = str(formData, "title");
+    if (formData.has("note")) data.note = str(formData, "note").trim();
+    await updatePart(partId, data);
   });
 }
 

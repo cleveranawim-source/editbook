@@ -39,3 +39,12 @@ test("canEditPart: 관리자는 역할이 없고 담당자도 아니면 편집�
 test("canEditPart: ARCHIVED 책에서는 EDITOR여도 편집할 수 없다", () => {
   expect(canEditPart(user, "EDITOR", "ARCHIVED", { assigneeUserId: null })).toBe(false);
 });
+
+test("canEditPart: 참여자가 아닌 담당자(role null)는 편집할 수 없다", () => {
+  expect(canEditPart(user, null, "ACTIVE", { assigneeUserId: "user-1" })).toBe(false);
+});
+
+test("canManageBook: ARCHIVED 책에서는 EDITOR도 관리자도 관리할 수 없다", () => {
+  expect(canManageBook(user, "EDITOR", "ARCHIVED")).toBe(false);
+  expect(canManageBook(admin, null, "ARCHIVED")).toBe(false);
+});

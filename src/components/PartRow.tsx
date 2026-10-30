@@ -11,6 +11,7 @@ export function PartRow({ part, mine }: { part: Part & { assignee: User | null }
         <span className="text-sm text-gray-600">{part.order}</span>
         <span className="min-w-0 break-words font-semibold">{part.title}</span>
       </div>
+      {part.note && <p className="break-words text-sm text-gray-600">{part.note}</p>}
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
         <span className="text-sm text-gray-600">
           {part.assignee ? `담당 ${part.assignee.name}` : "담당 없음"}
