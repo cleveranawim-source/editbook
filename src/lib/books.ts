@@ -94,3 +94,22 @@ export async function getBookForViewer(
   if (!canViewBook(actor, role)) return null;
   return { book, role };
 }
+
+/** 책 화면 머리말용 요약: 편집장 이름(가나다순), 교사 수, 파트 수. 책이 없으면 null. */
+export async function getBookSummary(
+  bookId: string,
+): Promise<{ editorNames: string[]; teacherCount: number; partCount: number } | null> {
+  const book = await prisma.book.findUnique({
+    where: { id: bookId },
+    include: {
+      members: { include: { user: true }, orderBy: { user: { name: "asc" } } },
+      _count: { select: { parts: true } },
+    },
+  });
+  if (!book) return null;
+  return {
+    editorNames: book.members.filter((m) => m.role === "EDITOR").map((m) => m.user.name),
+    teacherCount: book.members.filter((m) => m.role === "AUTHOR").length,
+    partCount: book._count.parts,
+  };
+}

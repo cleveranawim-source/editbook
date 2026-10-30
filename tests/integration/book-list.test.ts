@@ -1,6 +1,8 @@
 import { expect, test } from "vitest";
 import { createUser } from "@/lib/users";
-import { addMember, createBook, getBookForViewer, listBooksForUser, setBookStatus } from "@/lib/books";
+import {
+  addMember, createBook, getBookForViewer, getBookSummary, listBooksForUser, setBookStatus,
+} from "@/lib/books";
 import { createPart } from "@/lib/parts";
 import { resetDb } from "../helpers/db";
 
@@ -50,4 +52,24 @@ test("getBookForViewer: null for non-member, role for member, admin sees any", a
   const a = await getBookForViewer(b.id, { id: x.id, isAdmin: true });
   expect(a?.book.id).toBe(b.id);
   expect(a?.role).toBeNull();
+});
+
+test("getBookSummary: editor names sorted, teacher and part counts, null for unknown book", async () => {
+  await resetDb();
+  const e = await user("e1", "하편집");
+  const e2 = await user("e2", "가편집");
+  const w1 = await user("w1", "박교사");
+  const w2 = await user("w2", "최교사");
+  const b = await createBook({ title: "책", editorUserId: e.id });
+  await addMember(b.id, e2.id, "EDITOR");
+  await addMember(b.id, w1.id, "AUTHOR");
+  await addMember(b.id, w2.id, "AUTHOR");
+  await createPart({ bookId: b.id, title: "1장" });
+
+  expect(await getBookSummary(b.id)).toEqual({
+    editorNames: ["가편집", "하편집"],
+    teacherCount: 2,
+    partCount: 1,
+  });
+  expect(await getBookSummary("nope")).toBeNull();
 });
