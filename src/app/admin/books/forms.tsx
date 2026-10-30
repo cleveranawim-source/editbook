@@ -3,8 +3,8 @@
 import { useActionState, useEffect, useRef } from "react";
 import type { User } from "@/generated/prisma/client";
 import { createBookAction, setBookStatusAction } from "./actions";
-
-const input = "rounded border border-gray-300 px-3 py-2 text-base";
+import { Button } from "@/components/Button";
+import { Field, FormError, InlineError, Input, Select } from "@/components/Field";
 
 export function CreateBookForm({ users }: { users: Pick<User, "id" | "name" | "loginId">[] }) {
   const [state, action, pending] = useActionState(createBookAction, {});
@@ -15,14 +15,12 @@ export function CreateBookForm({ users }: { users: Pick<User, "id" | "name" | "l
     wasPending.current = pending;
   }, [pending, state.error]);
   return (
-    <form ref={ref} action={action} className="flex flex-col gap-3">
-      <label className="flex flex-col gap-1 text-sm">
-        제목
-        <input name="title" required autoComplete="off" className={input} />
-      </label>
-      <label className="flex flex-col gap-1 text-sm">
-        편집장
-        <select name="editorUserId" required defaultValue="" className={input}>
+    <form ref={ref} action={action} className="grid gap-3 md:grid-cols-[minmax(0,1fr)_260px_auto] md:items-end">
+      <Field label="제목">
+        <Input name="title" required autoComplete="off" placeholder="예: 중학교 종교 2" />
+      </Field>
+      <Field label="편집장">
+        <Select name="editorUserId" required defaultValue="">
           <option value="" disabled>
             선택하세요
           </option>
@@ -31,16 +29,12 @@ export function CreateBookForm({ users }: { users: Pick<User, "id" | "name" | "l
               {u.name} ({u.loginId})
             </option>
           ))}
-        </select>
-      </label>
-      {state.error && (
-        <p role="alert" className="text-sm text-red-600">
-          {state.error}
-        </p>
-      )}
-      <button type="submit" disabled={pending} className="rounded bg-blue-600 px-3 py-2 text-white disabled:opacity-60">
+        </Select>
+      </Field>
+      <Button type="submit" variant="secondary" pending={pending} className="min-w-24 justify-self-start">
         만들기
-      </button>
+      </Button>
+      <FormError message={state.error} className="md:col-span-3" />
     </form>
   );
 }
@@ -48,17 +42,13 @@ export function CreateBookForm({ users }: { users: Pick<User, "id" | "name" | "l
 export function BookStatusForm({ bookId, archived }: { bookId: string; archived: boolean }) {
   const [state, action, pending] = useActionState(setBookStatusAction, {});
   return (
-    <form action={action} className="flex flex-col gap-1">
+    <form action={action} className="flex flex-col items-start gap-1 lg:items-end">
       <input type="hidden" name="bookId" value={bookId} />
       <input type="hidden" name="status" value={archived ? "ACTIVE" : "ARCHIVED"} />
-      <button type="submit" disabled={pending} className="rounded bg-gray-700 px-3 py-2 text-white disabled:opacity-60">
+      <Button type="submit" variant="secondary" pending={pending} className="min-w-20">
         {archived ? "복원" : "보관"}
-      </button>
-      {state.error && (
-        <p role="alert" className="text-sm text-red-600">
-          {state.error}
-        </p>
-      )}
+      </Button>
+      <InlineError message={state.error} />
     </form>
   );
 }
