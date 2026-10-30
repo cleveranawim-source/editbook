@@ -11,3 +11,5 @@ node_modules/
 .DS_Store
 *.tsbuildinfo
 next-env.d.ts
+
+/src/generated/prisma
