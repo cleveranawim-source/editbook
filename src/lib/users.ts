@@ -25,3 +25,18 @@ export async function changePassword(userId: string, newPassword: string): Promi
     prisma.session.deleteMany({ where: { userId } }),
   ]);
 }
+
+/** 관리자가 없으면 만들고, 있으면 그대로 돌려준다(비밀번호·플래그를 건드리지 않음). */
+export async function ensureAdmin(loginId: string, password: string): Promise<User> {
+  const existing = await prisma.user.findUnique({ where: { loginId } });
+  if (existing) return existing;
+  return prisma.user.create({
+    data: {
+      loginId,
+      name: "관리자",
+      passwordHash: await hashPassword(password),
+      isAdmin: true,
+      mustChangePassword: true,
+    },
+  });
+}
