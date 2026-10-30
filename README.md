@@ -1,36 +1,48 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# EditBook
 
-## Getting Started
+교사 집필진과 편집장이 교과서 원고를 함께 다듬는 웹 편집실입니다. 현재는 1단계 뼈대(계정·책·참여자·파트 관리)까지 구현되어 있습니다.
 
-First, run the development server:
+## 요구 사항
+
+- Node 26
+- Docker (개발용 PostgreSQL)
+
+## 로컬 실행
 
 ```bash
+cp .env.example .env
+npm install
+npm run db:up
+npx prisma migrate dev
+npx prisma db seed
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+http://localhost:3000 에서 `admin` / `.env`의 `ADMIN_PASSWORD`로 로그인합니다. 첫 로그인 때 비밀번호를 바꿔야 합니다.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 테스트
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm run test
+```
 
-## Learn More
+DB 컨테이너(`npm run db:up`)가 떠 있어야 하며, 별도의 `editbook_test` DB를 사용합니다.
 
-To learn more about Next.js, take a look at the following resources:
+## 역할
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- 관리자: 계정과 책을 만들고 책마다 편집장을 지정합니다.
+- 편집장: 담당 책의 참여자(교사)와 파트를 관리합니다.
+- 교사: 참여 중인 책의 파트 목록을 보고 자기 파트를 확인합니다.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## 화면
 
-## Deploy on Vercel
+- `/login` 로그인
+- `/books` 책 목록
+- `/books/[id]` 파트 목록
+- `/books/[id]/manage` 참여자·파트 관리 (편집장)
+- `/admin/users` 계정 관리 (관리자)
+- `/admin/books` 책 관리 (관리자)
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## 설계 문서
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+[docs/superpowers/specs/2026-10-30-editbook-design.md](docs/superpowers/specs/2026-10-30-editbook-design.md)
