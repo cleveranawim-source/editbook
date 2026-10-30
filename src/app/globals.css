@@ -23,7 +23,7 @@
   --color-rule: #e7dcd5; /* 표의 행 구분선 */
   --color-field: #bfb4ac; /* 입력란 테두리 */
   --color-quiet: #cccccc; /* 조용한 버튼 테두리 */
-  --color-mine: #fef3f1; /* 내 파트 행 */
+  --color-mine: #fef3f1; /* 내 차례 행(빨강 계열은 내 차례에만) */
 
   /* 상태 색: 빨강 내 차례 · 노랑 상대 차례 · 초록 완료 · 회색 대기. 늘 글자와 함께 쓴다. */
   --color-st-red: #d23b2e;

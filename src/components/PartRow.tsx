@@ -21,13 +21,17 @@ export function PartRow({
   status: PartStatus;
   mine: boolean;
 }) {
+  // 빨강 계열(연한 붉은 바탕 + 빨간 꼬리표)은 내 차례에만 쓴다. 내 파트는 꼬리표만.
+  const myTurn = status.kind === "REQUESTS";
   return (
     <li
       className={cx(
-        "grid grid-cols-[36px_minmax(0,1fr)] items-start gap-x-3 gap-y-2.5 border-b border-rule px-4 py-4 transition-colors last:border-b-0 hover:bg-rb-tint",
+        "grid grid-cols-[36px_minmax(0,1fr)] items-start gap-x-3 gap-y-2.5 border-b border-rule px-4 py-4 transition-colors last:border-b-0",
+        // 손을 올리면 행 위아래 괘선이 적갈색으로 진해진다(책 카드의 테두리와 같은 말). 바탕은 그대로.
+        "hover:border-b-rb has-[+li:hover]:border-b-rb",
         "lg:h-[62px] lg:items-center lg:gap-0 lg:py-0 lg:pl-0 lg:pr-6",
         PART_COLUMNS,
-        mine && "bg-mine",
+        myTurn && "bg-mine",
       )}
     >
       <span className="row-span-3 pt-px text-center font-serif text-[22px] font-black leading-[1.1] text-rb lg:row-span-1 lg:pt-0">
@@ -39,13 +43,18 @@ export function PartRow({
         {/* 좁은 화면: 꼬리표가 줄바꿈된 제목 끝에 이어 붙는다. 넓은 화면: 한 줄, 제목만 줄임표. */}
         <div className="min-w-0 lg:flex lg:items-center lg:gap-2">
           <span className="text-[17px] font-bold leading-snug lg:min-w-0 lg:truncate">{part.title}</span>
+          {myTurn && (
+            <span className="ml-2 inline-block align-[2px] lg:ml-0 lg:shrink-0">
+              <TurnTag kind="turn" />
+            </span>
+          )}
           {mine && (
             <span className="ml-2 inline-block align-[2px] lg:ml-0 lg:shrink-0">
               <TurnTag kind="mine" />
             </span>
           )}
         </div>
-        {part.note && <p className="mt-0.5 text-[12.5px] leading-snug text-ink-2 lg:truncate">{part.note}</p>}
+        {part.note && <p className="mt-0.5 text-[13px] leading-snug text-ink-2 lg:truncate">{part.note}</p>}
       </div>
 
       <div className="flex min-w-0 items-center gap-4 lg:contents">

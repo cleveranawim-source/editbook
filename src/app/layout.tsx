@@ -5,6 +5,7 @@ import "./globals.css";
 import { getCurrentUser } from "@/lib/auth/current";
 import { logoutAction } from "@/app/login/actions";
 import { Button } from "@/components/Button";
+import { Tag } from "@/components/Tag";
 
 // 한글 글리프는 unicode-range 조각으로 필요할 때 받는다. 미리 받는 것은 latin뿐.
 const serif = Noto_Serif_KR({
@@ -52,6 +53,8 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
             {user && (
               <div className="flex min-w-0 items-center gap-3">
                 <span className="min-w-0 truncate text-[15px] font-bold">{user.name}</span>
+                {/* 역할은 책마다 다르지만 관리자는 전역 역할이라 여기서 알 수 있다. 360px에선 이름을 지키려 숨긴다. */}
+                {user.isAdmin && <Tag className="-ml-1 hidden sm:inline-flex">관리자</Tag>}
                 <form action={logoutAction} className="shrink-0">
                   <Button type="submit" variant="quiet" size="sm">
                     로그아웃

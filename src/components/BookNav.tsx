@@ -24,7 +24,7 @@ export function BookNav({ books, currentId }: { books: { book: Book }[]; current
                 <span aria-hidden className={cx("mt-[7px] size-2.5 shrink-0", current && "bg-rb")} />
                 <span className="min-w-0">
                   <span className={cx("block leading-snug", current && "font-bold")}>{book.title}</span>
-                  <span className="mt-0.5 block text-xs text-ink-3">
+                  <span className="mt-0.5 block text-[13px] text-ink-3">
                     {book.status === "ARCHIVED" ? "보관됨" : "진행 중"}
                   </span>
                 </span>

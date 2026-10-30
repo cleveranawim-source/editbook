@@ -15,7 +15,7 @@ export function StatusBadge({ tone, children }: { tone: Tone; children: ReactNod
   return (
     <span
       className={cx(
-        "inline-flex items-center whitespace-nowrap border px-[9px] py-[3px] text-[12.5px] font-bold leading-[1.3]",
+        "inline-flex items-center whitespace-nowrap border px-2 py-[2px] text-sm font-bold leading-[1.35]",
         TONES[tone],
       )}
     >
