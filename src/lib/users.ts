@@ -2,12 +2,48 @@ import { prisma } from "@/lib/db";
 import { hashPassword, verifyPassword } from "@/lib/auth/password";
 import { AppError } from "@/lib/errors";
 import type { User } from "@/generated/prisma/client";
+import { ipThrottle, loginIdThrottle, retryMessage } from "@/lib/auth/throttle";
 
-export async function authenticate(loginId: string, password: string): Promise<User> {
-  const fail = new AppError("아이디 또는 비밀번호가 맞지 않습니다.");
-  const user = await prisma.user.findUnique({ where: { loginId: loginId.trim() } });
-  if (!user) throw fail;
-  if (!(await verifyPassword(password, user.passwordHash))) throw fail;
+/** 로그인 아이디는 앞뒤 공백을 지우고 소문자로 통일한다(이메일 형식이므로). */
+export function normalizeLoginId(raw: string): string {
+  return raw.trim().toLowerCase();
+}
+
+/** 시드용 초기 비밀번호 검사: 예시 값과 8자 미만을 거부한다. */
+export function isSafeInitialPassword(p: string): boolean {
+  return p !== "change-me-now" && p.length >= 8;
+}
+
+/**
+ * 없는 아이디일 때도 bcrypt 비교를 한 번 수행해 응답 시간을 맞추기 위한 해시.
+ * 실제 비밀번호와는 무관한 임의 값이다.
+ */
+const DUMMY_HASH = "$2b$10$AUS1AQY6oAVFcfOjSZhgD.rmP.H5J82gD6al1zfKiPNatJtaFTth6";
+
+export async function authenticate(
+  rawLoginId: string,
+  password: string,
+  opts?: { ip?: string },
+): Promise<User> {
+  const loginId = normalizeLoginId(rawLoginId);
+  const idKey = `id:${loginId}`;
+  const ipKey = opts?.ip ? `ip:${opts.ip}` : null;
+
+  for (const [t, k] of [[loginIdThrottle, idKey], [ipThrottle, ipKey]] as const) {
+    if (!k) continue;
+    const c = t.check(k);
+    if (c.locked) throw new AppError(retryMessage(c.retryAfterMs));
+  }
+
+  const user = await prisma.user.findUnique({ where: { loginId } });
+  const ok = await verifyPassword(password, user?.passwordHash ?? DUMMY_HASH);
+  if (!user || !ok) {
+    const c = loginIdThrottle.fail(idKey);
+    if (ipKey) ipThrottle.fail(ipKey);
+    if (c.locked) throw new AppError(retryMessage(c.retryAfterMs));
+    throw new AppError("아이디 또는 비밀번호가 맞지 않습니다.");
+  }
+  loginIdThrottle.succeed(idKey);
   return user;
 }
 
@@ -27,7 +63,8 @@ export async function changePassword(userId: string, newPassword: string): Promi
 }
 
 /** 관리자가 없으면 만들고, 있으면 그대로 돌려준다(비밀번호·플래그를 건드리지 않음). */
-export async function ensureAdmin(loginId: string, password: string): Promise<User> {
+export async function ensureAdmin(rawLoginId: string, password: string): Promise<User> {
+  const loginId = normalizeLoginId(rawLoginId);
   const existing = await prisma.user.findUnique({ where: { loginId } });
   if (existing) return existing;
   return prisma.user.create({
@@ -47,7 +84,7 @@ export async function createUser(input: {
   password: string;
   isAdmin?: boolean;
 }): Promise<User> {
-  const loginId = input.loginId.trim();
+  const loginId = normalizeLoginId(input.loginId);
   const name = input.name.trim();
   if (!loginId || !name) throw new AppError("아이디와 이름을 입력하세요.");
   if (input.password.length < 8) throw new AppError("비밀번호는 8자 이상이어야 합니다.");
