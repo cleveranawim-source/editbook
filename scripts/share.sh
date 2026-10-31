@@ -14,6 +14,19 @@ command -v cloudflared >/dev/null 2>&1 || { echo "cloudflared가 없습니다: b
 
 sh scripts/share-stop.sh >/dev/null 2>&1 || true
 
+echo "▶ DB 확인 중…"
+if ! docker info >/dev/null 2>&1; then
+  # Docker 데몬(OrbStack 또는 Docker Desktop)이 꺼져 있으면 켠다.
+  open -a OrbStack 2>/dev/null || open -a Docker 2>/dev/null || true
+  for i in $(seq 1 60); do docker info >/dev/null 2>&1 && break; sleep 2; done
+  docker info >/dev/null 2>&1 || { echo "Docker가 켜지지 않았습니다. OrbStack(또는 Docker Desktop)을 실행한 뒤 다시 시도하세요."; exit 1; }
+fi
+docker compose -f docker-compose.dev.yml up -d >/dev/null 2>&1
+DB_ID=$(docker compose -f docker-compose.dev.yml ps -q db)
+for i in $(seq 1 30); do docker exec "$DB_ID" pg_isready -U postgres >/dev/null 2>&1 && break; sleep 1; done
+docker exec "$DB_ID" pg_isready -U postgres >/dev/null 2>&1 || { echo "DB가 뜨지 않았습니다."; exit 1; }
+npx prisma migrate deploy >/dev/null 2>&1 || { echo "DB 마이그레이션 실패"; exit 1; }
+
 if [ "$1" != "--no-build" ]; then
   echo "▶ 운영 빌드 중…"
   npm run build >.share/build.log 2>&1 || { echo "빌드 실패. .share/build.log를 보세요."; tail -20 .share/build.log; exit 1; }
