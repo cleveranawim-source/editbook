@@ -16,3 +16,6 @@ next-env.d.ts
 .impeccable/mocks/
 .impeccable/review/
 .impeccable/build/
+
+# scripts/share.sh 실행 상태(pid·로그·주소)
+.share/

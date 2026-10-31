@@ -1,7 +1,7 @@
 import { expect, test } from "vitest";
 import { prisma } from "@/lib/db";
 import { verifyPassword } from "@/lib/auth/password";
-import { ensureAdmin } from "@/lib/users";
+import { ensureAdmin, isSafeInitialPassword } from "@/lib/users";
 import { resetDb } from "../helpers/db";
 
 test("ensureAdmin creates an admin who must change password", async () => {
@@ -20,4 +20,10 @@ test("ensureAdmin is idempotent and never overwrites the password", async () => 
   expect(await prisma.user.count()).toBe(1);
   expect(await verifyPassword("first-pass-1", b.passwordHash)).toBe(true);
   expect(await verifyPassword("other-pass-2", b.passwordHash)).toBe(false);
+});
+
+test("isSafeInitialPassword rejects the example password and short ones", () => {
+  expect(isSafeInitialPassword("change-me-now")).toBe(false);
+  expect(isSafeInitialPassword("short")).toBe(false);
+  expect(isSafeInitialPassword("a-real-password")).toBe(true);
 });

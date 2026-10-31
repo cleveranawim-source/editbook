@@ -1,0 +1,33 @@
+# 운영용(클라우드 서버 한 대). 사용법은 docs/deploy.md 참고.
+#   cp .env.example .env  →  .env의 POSTGRES_PASSWORD·ADMIN_PASSWORD를 바꾼 뒤
+#   docker compose -f docker-compose.prod.yml up -d --build
+services:
+  db:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: editbook
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?.env에 POSTGRES_PASSWORD를 정하세요}
+    volumes:
+      - editbook_prod_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d editbook"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  app:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD}@db:5432/editbook
+      ADMIN_LOGIN_ID: ${ADMIN_LOGIN_ID:-admin}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?.env에 ADMIN_PASSWORD를 정하세요}
+    ports:
+      - "${APP_PORT:-3000}:3000"
+
+volumes:
+  editbook_prod_pgdata:

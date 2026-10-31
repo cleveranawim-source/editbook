@@ -46,3 +46,8 @@ DB 컨테이너(`npm run db:up`)가 떠 있어야 하며, 별도의 `editbook_te
 ## 설계 문서
 
 [docs/superpowers/specs/2026-10-30-editbook-design.md](docs/superpowers/specs/2026-10-30-editbook-design.md)
+
+## 다른 사람이 접속하게 하기
+
+- 임시 공개(이 Mac에서): `./scripts/share.sh` → 출력된 `https://….trycloudflare.com` 주소를 공유. 멈추기 `./scripts/share-stop.sh`.
+- 계속 쓰는 서버: [docs/deploy.md](docs/deploy.md).

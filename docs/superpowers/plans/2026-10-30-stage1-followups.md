@@ -2,14 +2,14 @@
 
 1단계 뼈대는 완료·검토 통과. 아래는 고치지 않고 다음 단계로 넘긴 것들이다.
 
-## 배포 전 반드시 (서버를 인터넷에 열기 전, 늦어도 3단계 편집장 시험 전)
+## 배포 전 반드시 — 2026-10-31 처리함
 
-- 로그인 시도 제한(throttling / lockout). 기본 관리자 아이디가 `admin`이라 특히 필요.
-- 없는 아이디와 틀린 비밀번호의 응답 시간을 같게(더미 bcrypt 비교).
-- 시드가 예시 비밀번호(`change-me-now`)나 8자 미만을 거부하게 (production).
-- 운영 환경에서 `npx prisma db seed`가 돌도록 `tsx` 확보 (Dockerfile에서 처리).
-- Dockerfile은 `npm ci` 전에 `prisma/`와 `prisma.config.ts`를 복사해야 postinstall `prisma generate`가 성공.
-- 로그인 아이디 소문자 정규화(이메일 형식이므로). 실제 계정이 생기기 전에 하는 게 싸다.
+- [x] 로그인 시도 제한(`src/lib/auth/throttle.ts`, 메모리 기반·단일 프로세스 가정). 서버를 여러 대로 늘리면 DB 테이블로 옮긴다.
+- [x] 없는 아이디와 틀린 비밀번호의 응답 시간을 같게(더미 bcrypt 비교).
+- [x] 시드가 운영(NODE_ENV=production)에서 예시 비밀번호·8자 미만을 거부.
+- [x] Dockerfile(`npm ci` 전에 prisma/ 복사, 런타임에 tsx·prisma CLI 포함) + `docker-compose.prod.yml` + `docs/deploy.md`.
+- [x] 로그인 아이디 소문자 정규화 + 기존 행 소문자화 마이그레이션.
+- [ ] 임시 공개(`scripts/share.sh`, Cloudflare 임시 터널)는 시험용. 계속 쓰려면 클라우드 서버로 옮긴다.
 
 ## 기능 보완 (편의)
 
