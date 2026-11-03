@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "build:vercel": "prisma migrate deploy && prisma db seed && next build",
     "start": "next start",
     "lint": "eslint",
     "test": "dotenv run -f .env.test -- sh -c \"prisma migrate deploy && vitest run\"",
