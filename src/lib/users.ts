@@ -9,6 +9,15 @@ export function normalizeLoginId(raw: string): string {
   return raw.trim().toLowerCase();
 }
 
+const LOGIN_ID_RE = /^[a-z0-9._@-]+$/;
+
+/** 정규화된 아이디가 규칙(영문 소문자·숫자·. _ @ -)에 맞는지 확인하고, 아니면 AppError. */
+export function assertValidLoginId(loginId: string): void {
+  if (!LOGIN_ID_RE.test(loginId)) {
+    throw new AppError("아이디는 영문 소문자·숫자와 . _ @ - 만 쓸 수 있습니다(공백 불가).");
+  }
+}
+
 /** 시드용 초기 비밀번호 검사: 예시 값과 8자 미만을 거부한다. */
 export function isSafeInitialPassword(p: string): boolean {
   return p !== "change-me-now" && p.length >= 8;
@@ -65,6 +74,7 @@ export async function changePassword(userId: string, newPassword: string): Promi
 /** 관리자가 없으면 만들고, 있으면 그대로 돌려준다(비밀번호·플래그를 건드리지 않음). */
 export async function ensureAdmin(rawLoginId: string, password: string): Promise<User> {
   const loginId = normalizeLoginId(rawLoginId);
+  assertValidLoginId(loginId);
   const existing = await prisma.user.findUnique({ where: { loginId } });
   if (existing) return existing;
   return prisma.user.create({
@@ -87,6 +97,7 @@ export async function createUser(input: {
   const loginId = normalizeLoginId(input.loginId);
   const name = input.name.trim();
   if (!loginId || !name) throw new AppError("아이디와 이름을 입력하세요.");
+  assertValidLoginId(loginId);
   if (input.password.length < 8) throw new AppError("비밀번호는 8자 이상이어야 합니다.");
   if (await prisma.user.findUnique({ where: { loginId } })) {
     throw new AppError("이미 있는 아이디입니다.");

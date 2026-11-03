@@ -9,7 +9,7 @@ export async function GET() {
     ok: false,
     db: "unknown",
     admin: false,
-    adminEnv: Boolean(process.env.ADMIN_LOGIN_ID && process.env.ADMIN_PASSWORD),
+    adminEnv: Boolean(process.env.ADMIN_PASSWORD),
   };
   try {
     out.startup = await ensureAdminFromEnv();

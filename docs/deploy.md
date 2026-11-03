@@ -7,7 +7,7 @@
 GitHub 저장소를 Vercel 프로젝트에 연결해 두면 main에 올릴 때마다 자동으로 다시 배포된다. 서버 코드는 Vercel이, 데이터는 Vercel Marketplace의 Neon Postgres(무료 플랜)가 맡는다.
 
 - 빌드 명령은 `vercel.json`의 `npm run build:vercel` = 마이그레이션 적용 → 관리자 계정 보장 → `next build`. 그래서 배포할 때 DB가 함께 최신이 된다.
-- 환경변수: `DATABASE_URL`(Neon 연결 시 자동), `ADMIN_LOGIN_ID`, `ADMIN_PASSWORD`(8자 이상, 예시 값 금지).
+- 환경변수: `DATABASE_URL`(Neon 연결 시 자동), `ADMIN_PASSWORD`(8자 이상, 예시 값 금지), `ADMIN_LOGIN_ID`(없으면 admin).
 - 서울 리전(icn1)에서 실행된다.
 - 한계: 로그인 시도 제한이 서버 인스턴스마다 따로 세어지므로 VPS보다 느슨하다. 큰 파일 업로드(2단계)는 Vercel Blob이나 외부 저장소가 필요하다.
 

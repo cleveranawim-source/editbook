@@ -15,9 +15,10 @@ test("ensureAdminFromEnv skips without env and creates once with env", async () 
   delete process.env.ADMIN_PASSWORD;
   expect(await ensureAdminFromEnv()).toContain("건너뜀");
   expect(await prisma.user.count()).toBe(0);
-  process.env.ADMIN_LOGIN_ID = "Admin";
   process.env.ADMIN_PASSWORD = "first-pass-1";
-  expect(await ensureAdminFromEnv()).toBe("관리자 'Admin' 보장됨");
+  // ADMIN_LOGIN_ID가 없으면 admin
+  expect(await ensureAdminFromEnv()).toBe("관리자 'admin' 보장됨");
+  process.env.ADMIN_LOGIN_ID = "Admin";
   await ensureAdminFromEnv();
   expect(await prisma.user.count({ where: { isAdmin: true, loginId: "admin" } })).toBe(1);
 });

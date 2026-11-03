@@ -12,8 +12,8 @@ if [ -z "${DATABASE_URL:-}" ]; then
 else
   echo "== 마이그레이션 적용 =="
   npx prisma migrate deploy
-  if [ -z "${ADMIN_LOGIN_ID:-}" ] || [ -z "${ADMIN_PASSWORD:-}" ]; then
-    echo "ADMIN_LOGIN_ID/ADMIN_PASSWORD가 없어 관리자 계정 생성을 건너뜁니다. Settings → Environment Variables에 넣고 다시 배포하세요."
+  if [ -z "${ADMIN_PASSWORD:-}" ]; then
+    echo "ADMIN_PASSWORD가 없어 관리자 계정 생성을 건너뜁니다. Settings → Environment Variables에 넣고 다시 배포하세요."
   else
     echo "== 관리자 계정 보장 =="
     npx prisma db seed

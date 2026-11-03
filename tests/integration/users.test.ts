@@ -91,3 +91,13 @@ test("ten failures lock the loginId for 15 minutes; success clears the count", a
     await expect(authenticate("teacher1", "nope")).rejects.toThrow("아이디 또는 비밀번호가 맞지 않습니다.");
   }
 });
+
+test("loginId with spaces or '=' is rejected", async () => {
+  await resetDb();
+  const msg = "아이디는 영문 소문자·숫자와 . _ @ - 만 쓸 수 있습니다(공백 불가).";
+  await expect(
+    createUser({ loginId: "SOME_KEY = value", name: "x", password: "pass-word-1" }),
+  ).rejects.toThrow(msg);
+  await expect(ensureAdmin("admin password", "pass-word-1")).rejects.toThrow(msg);
+  await expect(createUser({ loginId: "kim.teacher@school.kr", name: "김", password: "pass-word-1" })).resolves.toBeTruthy();
+});

@@ -3,10 +3,10 @@ import { prisma } from "@/lib/db";
 import { ensureAdmin, isSafeInitialPassword, normalizeLoginId } from "@/lib/users";
 
 async function main() {
-  const loginId = process.env.ADMIN_LOGIN_ID;
+  const loginId = process.env.ADMIN_LOGIN_ID || "admin";
   const password = process.env.ADMIN_PASSWORD;
-  if (!loginId || !password) {
-    console.error("ADMIN_LOGIN_ID와 ADMIN_PASSWORD 환경변수를 설정해 주세요.");
+  if (!password) {
+    console.error("ADMIN_PASSWORD 환경변수를 설정해 주세요.");
     process.exit(1);
   }
   if (process.env.NODE_ENV === "production" && !isSafeInitialPassword(password)) {
