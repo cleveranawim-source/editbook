@@ -1,32 +1,36 @@
-import Link from "next/link";
 import { requireUser } from "@/lib/auth/current";
 import { listBooksForUser } from "@/lib/books";
 import { BookCard } from "@/components/BookCard";
+import { ButtonLink } from "@/components/Button";
 import { EmptyState } from "@/components/EmptyState";
 import { PageHeader } from "@/components/PageHeader";
-
-const adminLink =
-  "inline-flex min-h-11 items-center px-1 font-medium text-ink underline transition-colors hover:text-rb";
 
 export default async function BooksPage() {
   const user = await requireUser();
   const books = await listBooksForUser(user.id);
   return (
     <>
-      <PageHeader title="내 책" count={books.length > 0 ? `${books.length}권` : undefined}>
+      <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-start md:justify-between md:gap-8">
+        <PageHeader title="내 책" count={books.length > 0 ? `${books.length}권` : undefined} className="mb-0" />
         {user.isAdmin && (
-          <p className="-mb-2 mt-1 flex flex-wrap items-center gap-x-1 text-sm text-ink-2">
-            <span className="mr-1">관리자:</span>
-            <Link href="/admin/users" className={adminLink}>
-              계정 관리
-            </Link>
-            <span aria-hidden>·</span>
-            <Link href="/admin/books" className={adminLink}>
-              책 관리
-            </Link>
-          </p>
+          <section aria-labelledby="admin-heading" className="shrink-0">
+            <h2 id="admin-heading" className="sr-only">
+              관리자 메뉴
+            </h2>
+            <div className="flex flex-wrap gap-2">
+              <ButtonLink href="/admin/users" variant="primary" className="flex-1 md:flex-none">
+                계정 관리
+              </ButtonLink>
+              <ButtonLink href="/admin/books" variant="primary" className="flex-1 md:flex-none">
+                책 관리
+              </ButtonLink>
+            </div>
+            <p className="mt-2 text-[13px] leading-snug text-ink-2 md:text-right">
+              선생님 계정은 계정 관리에서, 책은 책 관리에서 만듭니다.
+            </p>
+          </section>
         )}
-      </PageHeader>
+      </div>
 
       {books.length === 0 ? (
         <EmptyState>참여 중인 책이 없습니다. 편집장이나 관리자가 책에 초대하면 여기 보입니다.</EmptyState>

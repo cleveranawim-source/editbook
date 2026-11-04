@@ -63,7 +63,7 @@ export default async function ManagePage({ params }: { params: Promise<{ bookId:
             ))}
           </ul>
           <CardBand title="참여자 추가">
-            <AddMemberForm bookId={bookId} users={addable} />
+            <AddMemberForm bookId={bookId} users={addable} isAdmin={user.isAdmin} />
           </CardBand>
         </Card>
 

@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 import { useActionState, useEffect, useRef, useTransition } from "react";
 import {
   addMemberAction, createPartAction, movePartAction, removeMemberAction, updatePartAction,
@@ -21,14 +23,27 @@ function useResetOnSuccess(pending: boolean, error?: string) {
   return ref;
 }
 
-export function AddMemberForm({ bookId, users }: { bookId: string; users: Opt[] }) {
+export function AddMemberForm({ bookId, users, isAdmin }: { bookId: string; users: Opt[]; isAdmin: boolean }) {
   const [state, action, pending] = useActionState(addMemberAction, {});
   const ref = useResetOnSuccess(pending, state.error);
   const none = users.length === 0;
+  const noneHint = none
+    ? isAdmin
+      ? (
+          <>
+            모든 계정이 이미 이 책에 있습니다.{" "}
+            <Link href="/admin/users" className="font-bold text-ink underline hover:text-rb">
+              계정 관리
+            </Link>
+            에서 새 계정을 먼저 만드세요.
+          </>
+        )
+      : "모든 계정이 이미 이 책에 있습니다. 새 선생님은 관리자에게 계정 만들기를 부탁하세요."
+    : undefined;
   return (
     <form ref={ref} action={action} className="grid gap-3 md:grid-cols-[minmax(0,1fr)_180px_auto] md:items-end">
       <input type="hidden" name="bookId" value={bookId} />
-      <Field label="계정">
+      <Field label="계정" hint={noneHint}>
         <Select name="userId" required defaultValue="" disabled={none}>
           <option value="" disabled>
             {none ? "추가할 계정이 없습니다" : "선택하세요"}
