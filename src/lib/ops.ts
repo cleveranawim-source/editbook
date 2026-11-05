@@ -2,24 +2,22 @@ import { prisma } from "@/lib/db";
 
 /** 관리자 운영 상태: 자료 수와 저장소 사용량(DB 기록 기준), 마지막 백업 시각. */
 export async function opsSummary() {
-  const [users, books, parts, versions, requests, materials, notifications, pushDevices, versionBytes, materialBytes, lastBackup] =
-    await Promise.all([
-      prisma.user.count(),
-      prisma.book.count(),
-      prisma.part.count(),
-      prisma.version.count(),
-      prisma.editRequest.count(),
-      prisma.material.count(),
-      prisma.notification.count(),
-      prisma.pushSubscription.count(),
-      prisma.version.aggregate({ _sum: { originalSize: true } }),
-      prisma.material.aggregate({ _sum: { size: true } }),
-      prisma.appSetting.findUnique({ where: { key: "lastBackupAt" } }),
-    ]);
+  // 질의를 하나씩 보낸다: 서버리스 데이터베이스의 동시 연결 수를 넘기지 않게.
+  const users = await prisma.user.count();
+  const books = await prisma.book.count();
+  const parts = await prisma.part.count();
+  const versions = await prisma.version.count();
+  const requests = await prisma.editRequest.count();
+  const materials = await prisma.material.count();
+  const notifications = await prisma.notification.count();
+  const pushDevices = await prisma.pushSubscription.count();
+  const versionBytes = await prisma.version.aggregate({ _sum: { originalSize: true } });
+  const materialBytes = await prisma.material.aggregate({ _sum: { size: true } });
+  const lastBackup = await prisma.appSetting.findUnique({ where: { key: "lastBackupAt" } });
   return {
     counts: { users, books, parts, versions, requests, materials, notifications, pushDevices },
     bytes: {
-      originals: versionBytes._sum.originalSize ?? 0,
+      originals: Number(versionBytes._sum.originalSize ?? 0),
       materials: Number(materialBytes._sum.size ?? 0),
     },
     lastBackupAt: lastBackup ? new Date(lastBackup.value) : null,
@@ -32,16 +30,14 @@ export async function opsSummary() {
  * 파일 자체는 저장소(Vercel Blob)에 있고, 여기에는 주소와 원래 이름이 들어간다.
  */
 export async function buildBackup() {
-  const [users, books, members, parts, versions, requests, comments, materials] = await Promise.all([
-    prisma.user.findMany({ orderBy: { createdAt: "asc" } }),
-    prisma.book.findMany({ orderBy: { createdAt: "asc" } }),
-    prisma.bookMember.findMany(),
-    prisma.part.findMany({ orderBy: [{ bookId: "asc" }, { order: "asc" }] }),
-    prisma.version.findMany({ orderBy: [{ partId: "asc" }, { number: "asc" }] }),
-    prisma.editRequest.findMany({ orderBy: [{ partId: "asc" }, { number: "asc" }] }),
-    prisma.editRequestComment.findMany({ orderBy: { createdAt: "asc" } }),
-    prisma.material.findMany({ orderBy: { createdAt: "asc" } }),
-  ]);
+  const users = await prisma.user.findMany({ orderBy: { createdAt: "asc" } });
+  const books = await prisma.book.findMany({ orderBy: { createdAt: "asc" } });
+  const members = await prisma.bookMember.findMany();
+  const parts = await prisma.part.findMany({ orderBy: [{ bookId: "asc" }, { order: "asc" }] });
+  const versions = await prisma.version.findMany({ orderBy: [{ partId: "asc" }, { number: "asc" }] });
+  const requests = await prisma.editRequest.findMany({ orderBy: [{ partId: "asc" }, { number: "asc" }] });
+  const comments = await prisma.editRequestComment.findMany({ orderBy: { createdAt: "asc" } });
+  const materials = await prisma.material.findMany({ orderBy: { createdAt: "asc" } });
   const files = [
     ...versions.flatMap((v) => [
       { kind: "원고", ref: v.originalRef, name: v.originalName },

@@ -11,7 +11,21 @@ const when = new Intl.DateTimeFormat("ko-KR", { dateStyle: "medium", timeStyle: 
 
 export default async function AdminStatusPage() {
   await requireAdmin();
-  const s = await opsSummary();
+  let s: Awaited<ReturnType<typeof opsSummary>>;
+  try {
+    s = await opsSummary();
+  } catch (e) {
+    console.error("[editbook] 운영 상태 실패", e);
+    return (
+      <div className="max-w-[880px]">
+        <PageHeader title="운영 상태" />
+        <Card className="px-5 py-5 text-sm">
+          <p className="font-bold text-st-red-fg">운영 상태를 읽지 못했습니다.</p>
+          <p className="mt-2 break-all text-ink-2">{e instanceof Error ? e.message.split("\n").slice(-3).join(" ") : String(e)}</p>
+        </Card>
+      </div>
+    );
+  }
   const storage = storageKind();
   const days = s.daysSinceBackup;
   const rows: [string, number][] = [
