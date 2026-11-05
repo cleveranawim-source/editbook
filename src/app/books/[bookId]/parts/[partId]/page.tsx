@@ -6,7 +6,7 @@ import { canEditPart } from "@/lib/permissions";
 import { blobUploadMode, fileUrl, storageKind } from "@/lib/storage";
 import { getPartForViewer, listVersions, type VersionRow } from "@/lib/versions";
 import { BackLink } from "@/components/BackLink";
-import { ButtonLink } from "@/components/Button";
+import { buttonClass } from "@/components/Button";
 import { Card, CardBand, CardTitle } from "@/components/Card";
 import { EmptyState } from "@/components/EmptyState";
 import { StatusBadge } from "@/components/StatusBadge";
@@ -78,9 +78,10 @@ export default async function PartPage({
               versions={versions.map((x) => ({ number: x.number, label: `v${x.number} · ${when.format(x.createdAt)}` }))}
               current={current.number}
             />
-            <ButtonLink href={fileUrl(current.originalRef, { download: true })} variant="secondary">
+            {/* 파일 내려받기는 페이지 이동이 아니므로 next/link가 아닌 일반 a(미리 불러오기 없음) */}
+            <a href={fileUrl(current.originalRef, { download: true })} className={buttonClass("secondary")}>
               원본 내려받기
-            </ButtonLink>
+            </a>
           </div>
         )}
       </Card>
