@@ -8,6 +8,7 @@ import {
   createRequest,
   rerequest,
   resolveRequest,
+  notifyNewVersion,
   respondWithVersion,
   setPartComplete,
 } from "@/lib/requests";
@@ -57,7 +58,8 @@ export async function createVersionAction(input: CreateVersionInput): Promise<Cr
     await assertCanUpload(input.partId, user);
     const { respondsTo = [], ...rest } = input;
     const v = await createVersion({ ...rest, uploadedById: user.id });
-    await respondWithVersion(user, input.partId, v.id, respondsTo);
+    const responded = await respondWithVersion(user, input.partId, v.id, respondsTo);
+    await notifyNewVersion(user, v.id, responded);
     await refreshPart(input.partId);
     return { ok: true, number: v.number };
   } catch (e) {

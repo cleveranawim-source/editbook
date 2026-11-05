@@ -5,17 +5,23 @@ import { requireAdmin } from "@/lib/auth/current";
 import { createBook, setBookStatus } from "@/lib/books";
 import { AppError } from "@/lib/errors";
 import type { ActionState } from "@/app/login/actions";
+import { notify } from "@/lib/notify";
 
 export async function createBookAction(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  await requireAdmin();
+  const admin = await requireAdmin();
   try {
-    await createBook({
+    const book = await createBook({
       title: String(formData.get("title") ?? ""),
       editorUserId: String(formData.get("editorUserId") ?? ""),
     });
+    await notify(
+      [String(formData.get("editorUserId") ?? "")],
+      { kind: "invited", title: `「${book.title}」의 편집장이 되었습니다 · ${admin.name}`, url: `/books/${book.id}` },
+      admin.id,
+    );
   } catch (e) {
     if (e instanceof AppError) return { error: e.message };
     throw e;

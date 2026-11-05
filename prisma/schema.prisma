@@ -26,6 +26,8 @@ model User {
   uploadedVersions   Version[]
   editRequests       EditRequest[]
   editComments       EditRequestComment[]
+  notifications      Notification[]
+  pushSubscriptions  PushSubscription[]
 }
 
 model Session {
@@ -171,4 +173,38 @@ model EditRequestComment {
   version   Version?          @relation(fields: [versionId], references: [id], onDelete: SetNull)
 
   @@index([requestId])
+}
+
+/// 앱 안 알림함 한 줄. url은 누르면 갈 곳(파트 편집실의 그 요청 등).
+model Notification {
+  id        String    @id @default(cuid())
+  userId    String
+  kind      String
+  title     String
+  body      String    @default("")
+  url       String
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, readAt])
+  @@index([userId, createdAt])
+}
+
+/// 기기 하나의 웹 푸시 구독.
+model PushSubscription {
+  id        String   @id @default(cuid())
+  userId    String
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  userAgent String   @default("")
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+/// 앱 전체 설정(웹 푸시 VAPID 키처럼 한 번 만들어 계속 쓰는 값).
+model AppSetting {
+  key   String @id
+  value String
 }

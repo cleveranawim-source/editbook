@@ -3,9 +3,25 @@ import { AppError } from "@/lib/errors";
 import type { Actor } from "@/lib/permissions";
 import { clampRect, type Perspective, type Rect, type RequestView } from "@/lib/request-view";
 import { getPartForViewer, type PartView } from "@/lib/versions";
+import { editorIds, notify, partUrl } from "@/lib/notify";
 import type { EditCommentAction, EditRequest, Prisma } from "@/generated/prisma/client";
 
 const MAX_BODY = 2000;
+
+async function nameOf(userId: string): Promise<string> {
+  const u = await prisma.user.findUnique({ where: { id: userId }, select: { name: true } });
+  return u?.name ?? "누군가";
+}
+
+/** 요청 하나에 얽힌 사람들: 요청 작성자, 담당 교사, 댓글 단 사람. */
+async function participantsOf(requestId: string): Promise<string[]> {
+  const r = await prisma.editRequest.findUnique({
+    where: { id: requestId },
+    include: { part: { select: { assigneeUserId: true } }, comments: { select: { authorId: true } } },
+  });
+  if (!r) return [];
+  return [r.authorId, r.part.assigneeUserId, ...r.comments.map((c) => c.authorId)].filter((x): x is string => Boolean(x));
+}
 
 /** 이 사람이 이 파트에서 어떤 자리인가. 관리자는 편집장과 같게 본다. */
 export function perspectiveOf(
@@ -36,7 +52,7 @@ export async function createRequest(
   actor: Actor,
   input: Rect & { partId: string; versionId: string; body: string },
 ): Promise<EditRequest> {
-  const { perspective } = await loadWritable(input.partId, actor);
+  const { view, perspective } = await loadWritable(input.partId, actor);
   if (perspective === "other") throw new AppError("편집장과 이 파트 담당 선생님만 표시할 수 있습니다.");
   const version = await prisma.version.findUnique({ where: { id: input.versionId } });
   if (!version || version.partId !== input.partId) throw new AppError("버전을 찾을 수 없습니다.");
@@ -45,7 +61,7 @@ export async function createRequest(
   const rect = clampRect(input);
   if (rect.w < 0.005 || rect.h < 0.005) throw new AppError("영역이 너무 작습니다. 조금 더 크게 그려 주세요.");
   const kind = perspective === "editor" ? "REQUEST" : "QUESTION";
-  return prisma.$transaction(async (tx) => {
+  const created = await prisma.$transaction(async (tx) => {
     const max = await tx.editRequest.aggregate({ where: { partId: input.partId }, _max: { number: true } });
     return tx.editRequest.create({
       data: {
@@ -60,13 +76,24 @@ export async function createRequest(
       },
     });
   });
+  const part = view.part;
+  const url = partUrl(part.bookId, part.id, { version: version.number, request: created.id });
+  const who = await nameOf(actor.id);
+  if (kind === "REQUEST") {
+    await notify([part.assigneeUserId], { kind: "request", title: `「${part.title}」 ${created.number}번 수정 요청 · ${who}`, body, url }, actor.id);
+  } else {
+    await notify(await editorIds(part.bookId), { kind: "question", title: `「${part.title}」 ${created.number}번 질문 · ${who}`, body, url }, actor.id);
+  }
+  return created;
 }
 
 async function loadRequest(requestId: string, actor: Actor) {
   const req = await prisma.editRequest.findUnique({ where: { id: requestId } });
   if (!req) throw new AppError("요청을 찾을 수 없습니다.");
-  const { perspective } = await loadWritable(req.partId, actor);
-  return { req, perspective };
+  const { view, perspective } = await loadWritable(req.partId, actor);
+  const version = await prisma.version.findUnique({ where: { id: req.versionId }, select: { number: true } });
+  const url = partUrl(view.part.bookId, view.part.id, { version: version?.number, request: req.id });
+  return { req, perspective, view, url };
 }
 
 /**
@@ -75,7 +102,7 @@ async function loadRequest(requestId: string, actor: Actor) {
  * - 편집장이 열린 질문에 답하면 → 답변됨
  */
 export async function addComment(actor: Actor, requestId: string, rawBody: string): Promise<void> {
-  const { req, perspective } = await loadRequest(requestId, actor);
+  const { req, perspective, view, url } = await loadRequest(requestId, actor);
   if (perspective === "other") throw new AppError("편집장과 이 파트 담당 선생님만 댓글을 달 수 있습니다.");
   const body = cleanBody(rawBody, true);
   let action: EditCommentAction = "NOTE";
@@ -91,11 +118,21 @@ export async function addComment(actor: Actor, requestId: string, rawBody: strin
     prisma.editRequestComment.create({ data: { requestId, authorId: actor.id, body, action } }),
     prisma.editRequest.update({ where: { id: requestId }, data: { status } }),
   ]);
+  const who = await nameOf(actor.id);
+  const t = view.part.title;
+  const people = await participantsOf(requestId);
+  if (action === "RESPOND") {
+    await notify([...(await editorIds(view.part.bookId)), ...people], { kind: "respond", title: `「${t}」 ${req.number}번 요청에 응답 · ${who}`, body, url }, actor.id);
+  } else if (action === "ANSWER") {
+    await notify(people, { kind: "answer", title: `「${t}」 ${req.number}번 질문에 답변 · ${who}`, body, url }, actor.id);
+  } else {
+    await notify(people, { kind: "comment", title: `「${t}」 ${req.number}번에 댓글 · ${who}`, body, url }, actor.id);
+  }
 }
 
 /** 편집장이 확인 완료. 메모는 선택. */
 export async function resolveRequest(actor: Actor, requestId: string, rawBody = ""): Promise<void> {
-  const { req, perspective } = await loadRequest(requestId, actor);
+  const { req, perspective, view, url } = await loadRequest(requestId, actor);
   if (perspective !== "editor") throw new AppError("편집장만 확인 완료할 수 있습니다.");
   if (req.kind !== "REQUEST" || req.status === "RESOLVED") throw new AppError("확인 완료할 수 없는 상태입니다.");
   const body = cleanBody(rawBody, false);
@@ -103,11 +140,16 @@ export async function resolveRequest(actor: Actor, requestId: string, rawBody = 
     prisma.editRequestComment.create({ data: { requestId, authorId: actor.id, body, action: "RESOLVE" } }),
     prisma.editRequest.update({ where: { id: requestId }, data: { status: "RESOLVED" } }),
   ]);
+  await notify(
+    [view.part.assigneeUserId],
+    { kind: "resolve", title: `「${view.part.title}」 ${req.number}번 요청 확인 완료 · ${await nameOf(actor.id)}`, body, url },
+    actor.id,
+  );
 }
 
 /** 편집장이 재요청. 무엇이 더 필요한지 메모가 꼭 있어야 한다. */
 export async function rerequest(actor: Actor, requestId: string, rawBody: string): Promise<void> {
-  const { req, perspective } = await loadRequest(requestId, actor);
+  const { req, perspective, view, url } = await loadRequest(requestId, actor);
   if (perspective !== "editor") throw new AppError("편집장만 재요청할 수 있습니다.");
   if (req.kind !== "REQUEST" || req.status === "OPEN") throw new AppError("재요청할 수 없는 상태입니다.");
   const body = cleanBody(rawBody, true);
@@ -115,6 +157,11 @@ export async function rerequest(actor: Actor, requestId: string, rawBody: string
     prisma.editRequestComment.create({ data: { requestId, authorId: actor.id, body, action: "REREQUEST" } }),
     prisma.editRequest.update({ where: { id: requestId }, data: { status: "OPEN" } }),
   ]);
+  await notify(
+    [view.part.assigneeUserId],
+    { kind: "rerequest", title: `「${view.part.title}」 ${req.number}번 재요청 · ${await nameOf(actor.id)}`, body, url },
+    actor.id,
+  );
 }
 
 /** 새 버전을 올리면서 고른 열린 요청들을 한꺼번에 응답함으로. 다른 파트·닫힌 것·질문은 건너뛴다. */
@@ -246,4 +293,22 @@ export async function turnSummaryForBooks(
     else if (turn === "theirs") s.theirs += 1;
   }
   return out;
+}
+
+/** 새 버전이 올라오면 편집장들(과 담당 교사)에게. 응답한 요청 수를 함께 알린다. */
+export async function notifyNewVersion(actor: Actor, versionId: string, respondedCount: number): Promise<void> {
+  const v = await prisma.version.findUnique({ where: { id: versionId }, include: { part: true } });
+  if (!v) return;
+  const who = await nameOf(actor.id);
+  const extra = respondedCount > 0 ? ` · 요청 ${respondedCount}개 응답` : "";
+  await notify(
+    [...(await editorIds(v.part.bookId)), v.part.assigneeUserId],
+    {
+      kind: "version",
+      title: `「${v.part.title}」 v${v.number} 올라옴 · ${who}${extra}`,
+      body: v.note,
+      url: partUrl(v.part.bookId, v.partId, { version: v.number }),
+    },
+    actor.id,
+  );
 }

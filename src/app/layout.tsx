@@ -6,6 +6,8 @@ import { getCurrentUser } from "@/lib/auth/current";
 import { logoutAction } from "@/app/login/actions";
 import { Button, ButtonLink } from "@/components/Button";
 import { Tag } from "@/components/Tag";
+import { NotificationBell } from "@/components/NotificationBell";
+import { unreadCount } from "@/lib/notify";
 
 // 한글 글리프는 unicode-range 조각으로 필요할 때 받는다. 미리 받는 것은 latin뿐.
 const serif = Noto_Serif_KR({
@@ -24,6 +26,8 @@ const sans = Noto_Sans_KR({
 export const metadata: Metadata = {
   title: "EditBook",
   description: "교과서 공동 편집실",
+  appleWebApp: { capable: true, title: "EditBook", statusBarStyle: "default" },
+  icons: { icon: "/icons/icon-192.png", apple: "/icons/apple-touch-icon.png" },
 };
 
 export const viewport: Viewport = {
@@ -32,6 +36,7 @@ export const viewport: Viewport = {
 
 export default async function RootLayout({ children }: LayoutProps<"/">) {
   const user = await getCurrentUser();
+  const unread = user ? await unreadCount(user.id) : 0;
   return (
     <html lang="ko" className={`${serif.variable} ${sans.variable} h-full`}>
       <body className="flex min-h-full flex-col">
@@ -65,6 +70,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
                     </ButtonLink>
                   </nav>
                 )}
+                <NotificationBell initial={unread} />
                 <form action={logoutAction} className="shrink-0">
                   <Button type="submit" variant="quiet" size="sm">
                     로그아웃
