@@ -23,6 +23,7 @@ model User {
   sessions           Session[]
   memberships        BookMember[]
   assignedParts      Part[]
+  uploadedVersions   Version[]
 }
 
 model Session {
@@ -72,6 +73,27 @@ model Part {
   assigneeUserId String?
   book           Book    @relation(fields: [bookId], references: [id], onDelete: Cascade)
   assignee       User?   @relation(fields: [assigneeUserId], references: [id], onDelete: SetNull)
+  versions       Version[]
 
   @@unique([bookId, order])
+}
+
+/// 파트에 올린 원고 한 벌. 번호는 파트 안에서 1부터 올라가고 덮어쓰기는 없다.
+/// ref는 저장 위치 표시자: Vercel Blob이면 https 주소, 로컬 디스크면 "local:<경로>".
+model Version {
+  id           String   @id @default(cuid())
+  partId       String
+  number       Int
+  originalRef  String
+  originalName String
+  originalSize Int
+  pdfRef       String?
+  pdfName      String?
+  note         String   @default("")
+  uploadedById String?
+  createdAt    DateTime @default(now())
+  part         Part     @relation(fields: [partId], references: [id], onDelete: Cascade)
+  uploadedBy   User?    @relation(fields: [uploadedById], references: [id], onDelete: SetNull)
+
+  @@unique([partId, number])
 }

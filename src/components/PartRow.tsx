@@ -1,4 +1,5 @@
-import type { Part, User } from "@/generated/prisma/client";
+import Link from "next/link";
+import type { Part, User, Version } from "@/generated/prisma/client";
 import type { PartStatus } from "@/lib/part-status";
 import { cx } from "@/components/cx";
 import { ProgressStrip } from "@/components/ProgressStrip";
@@ -16,11 +17,15 @@ export function PartRow({
   part,
   status,
   mine,
+  latest,
 }: {
   part: Part & { assignee: User | null };
   status: PartStatus;
   mine: boolean;
+  /** 최신 원고 버전. 없으면 undefined. */
+  latest?: Pick<Version, "number" | "createdAt">;
 }) {
+  const sub = [part.note, latest ? `v${latest.number} · ${formatDate(latest.createdAt)}` : null].filter(Boolean).join(" · ");
   // 빨강 계열(연한 붉은 바탕 + 빨간 꼬리표)은 내 차례에만 쓴다. 내 파트는 꼬리표만.
   const myTurn = status.kind === "REQUESTS";
   return (
@@ -42,7 +47,12 @@ export function PartRow({
       <div className="min-w-0 lg:pr-5">
         {/* 좁은 화면: 꼬리표가 줄바꿈된 제목 끝에 이어 붙는다. 넓은 화면: 한 줄, 제목만 줄임표. */}
         <div className="min-w-0 lg:flex lg:items-center lg:gap-2">
-          <span className="text-[17px] font-bold leading-snug lg:min-w-0 lg:truncate">{part.title}</span>
+          <Link
+            href={`/books/${part.bookId}/parts/${part.id}`}
+            className="text-[17px] font-bold leading-snug text-ink underline decoration-rb-line underline-offset-4 hover:decoration-rb lg:min-w-0 lg:truncate"
+          >
+            {part.title}
+          </Link>
           {myTurn && (
             <span className="ml-2 inline-block align-[2px] lg:ml-0 lg:shrink-0">
               <TurnTag kind="turn" />
@@ -54,7 +64,7 @@ export function PartRow({
             </span>
           )}
         </div>
-        {part.note && <p className="mt-0.5 text-[13px] leading-snug text-ink-2 lg:truncate">{part.note}</p>}
+        {sub && <p className="mt-0.5 text-[13px] leading-snug text-ink-2 lg:truncate">{sub}</p>}
       </div>
 
       <div className="flex min-w-0 items-center gap-4 lg:contents">
@@ -76,4 +86,8 @@ export function PartRow({
       </div>
     </li>
   );
+}
+
+function formatDate(d: Date): string {
+  return new Intl.DateTimeFormat("ko-KR", { month: "numeric", day: "numeric", timeZone: "Asia/Seoul" }).format(d);
 }

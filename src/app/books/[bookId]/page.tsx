@@ -4,6 +4,7 @@ import { getBookForViewer, getBookSummary, listBooksForUser } from "@/lib/books"
 import { listParts } from "@/lib/parts";
 import { computePartStatus, type PartStatus } from "@/lib/part-status";
 import { canManageBook } from "@/lib/permissions";
+import { latestVersionsByPart } from "@/lib/versions";
 import { BackLink } from "@/components/BackLink";
 import { BookNav } from "@/components/BookNav";
 import { ButtonLink } from "@/components/Button";
@@ -20,16 +21,23 @@ export default async function BookPage({ params }: { params: Promise<{ bookId: s
   const found = await getBookForViewer(bookId, user);
   if (!found) notFound();
   const { book, role } = found;
-  const [parts, summary, myBooks] = await Promise.all([
+  const [parts, summary, myBooks, latest] = await Promise.all([
     listParts(bookId),
     getBookSummary(bookId),
     listBooksForUser(user.id),
+    latestVersionsByPart(bookId),
   ]);
 
-  // 2·3단계에서 실제 입력값(버전·요청·확인)으로 바뀐다.
+  // 요청·확인·완료는 3단계에서 실제 값으로 바뀐다.
   const rows = parts.map((part) => ({
     part,
-    status: computePartStatus({ hasVersion: false, openRequests: 0, awaitingReview: 0, completed: false }),
+    latest: latest.get(part.id),
+    status: computePartStatus({
+      hasVersion: latest.has(part.id),
+      openRequests: 0,
+      awaitingReview: 0,
+      completed: false,
+    }),
   }));
   const count = (...kinds: PartStatus["kind"][]) => rows.filter((r) => kinds.includes(r.status.kind)).length;
   const manage = canManageBook(user, role, book.status);
@@ -100,8 +108,14 @@ export default async function BookPage({ params }: { params: Promise<{ bookId: s
                 <span>상태</span>
               </TableHead>
               <ul>
-                {rows.map(({ part, status }) => (
-                  <PartRow key={part.id} part={part} status={status} mine={part.assigneeUserId === user.id} />
+                {rows.map(({ part, status, latest }) => (
+                  <PartRow
+                    key={part.id}
+                    part={part}
+                    status={status}
+                    latest={latest}
+                    mine={part.assigneeUserId === user.id}
+                  />
                 ))}
               </ul>
             </Card>

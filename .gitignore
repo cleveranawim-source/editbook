@@ -19,3 +19,6 @@ next-env.d.ts
 
 # scripts/share.sh 실행 상태(pid·로그·주소)
 .share/
+
+# 로컬 저장 방식(Blob 토큰 없을 때)의 업로드 파일
+/.uploads/
