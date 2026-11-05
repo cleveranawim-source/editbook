@@ -26,7 +26,7 @@ export function PdfViewer({ url, label }: { url: string; label: string }) {
     (async () => {
       try {
         const pdfjs = await import("pdfjs-dist");
-        pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
+        pdfjs.GlobalWorkerOptions.workerSrc = "/vendor/pdf.worker.min.mjs";
         task = pdfjs.getDocument({ url });
         const loaded = await task.promise;
         if (cancelled) return;

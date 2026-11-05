@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/auth/current";
-import { formatBytes } from "@/lib/files";
+import { extensionOf, formatBytes } from "@/lib/files";
 import { computePartStatus } from "@/lib/part-status";
 import { canEditPart } from "@/lib/permissions";
 import { fileUrl, storageKind } from "@/lib/storage";
@@ -11,6 +11,7 @@ import { Card, CardBand, CardTitle } from "@/components/Card";
 import { EmptyState } from "@/components/EmptyState";
 import { StatusBadge } from "@/components/StatusBadge";
 import { TurnTag } from "@/components/Tag";
+import { HwpViewer } from "./hwp-viewer";
 import { PdfViewer } from "./pdf-viewer";
 import { UploadForm } from "./upload-form";
 import { VersionSelect } from "./version-select";
@@ -94,6 +95,8 @@ export default async function PartPage({
             </EmptyState>
           ) : current.pdfRef ? (
             <PdfViewer key={current.id} url={fileUrl(current.pdfRef)} label={`v${current.number} 미리보기`} />
+          ) : ["hwp", "hwpx"].includes(extensionOf(current.originalName)) ? (
+            <HwpViewer key={current.id} url={fileUrl(current.originalRef)} label={`v${current.number} 간이 미리보기`} />
           ) : (
             <EmptyState variant="inline">
               v{current.number}에는 미리보기용 PDF가 없습니다. 원본을 내려받아 열어 보세요.

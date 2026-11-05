@@ -10,15 +10,20 @@
     "lint": "eslint",
     "test": "dotenv run -f .env.test -- sh -c \"prisma migrate deploy && vitest run\"",
     "db:up": "docker compose -f docker-compose.dev.yml up -d",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "copy-vendor": "node scripts/copy-vendor.mjs",
+    "predev": "node scripts/copy-vendor.mjs",
+    "prebuild": "node scripts/copy-vendor.mjs"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.10.1",
     "@prisma/client": "^7.10.1",
+    "@rhwp/core": "^0.8.7",
     "@vercel/blob": "^2.8.2",
     "bcryptjs": "^3.0.3",
     "dotenv": "^18.0.9",
     "next": "16.4.3",
+    "pdf-lib": "^1.17.1",
     "pdfjs-dist": "^6.5.438",
     "pg": "^8.23.1",
     "prisma": "^7.10.1",

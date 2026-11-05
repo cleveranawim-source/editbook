@@ -9,6 +9,7 @@ import { cx } from "@/components/cx";
 import { Field, FormError, Input } from "@/components/Field";
 import type { StorageKind } from "@/lib/storage";
 import { extensionOf, formatBytes, isOriginalName, MAX_FILE_BYTES, ORIGINAL_ACCEPT, safeFilename } from "@/lib/files";
+import { hwpToPdf, isHwpName } from "@/lib/hwp-client";
 
 /**
  * 새 버전 올리기. 원고 파일 하나(필수) + 미리보기용 PDF(한글·워드일 때 권장).
@@ -24,23 +25,32 @@ export function UploadForm({ partId, storage }: { partId: string; storage: Exclu
   const [progress, setProgress] = useState<number | null>(null);
   const [pending, setPending] = useState(false);
   const [dragging, setDragging] = useState(false);
+  const [converting, setConverting] = useState<{ done: number; total: number } | null>(null);
+  const [convertFailed, setConvertFailed] = useState(false);
   const originalInput = useRef<HTMLInputElement>(null);
   const pdfInput = useRef<HTMLInputElement>(null);
 
   const originalIsPdf = original ? extensionOf(original.name) === "pdf" : false;
-  const needsPdfHint = original && !originalIsPdf && !pdf;
+  const originalIsHwp = original ? isHwpName(original.name) : false;
+  const needsPdfHint = original && !originalIsPdf && !originalIsHwp && !pdf;
+
+  function chooseOriginal(f: File) {
+    setError(undefined);
+    setConvertFailed(false);
+    setOriginal(f);
+  }
 
   function pick(files: FileList | File[]) {
     const list = Array.from(files);
     const pdfs = list.filter((f) => extensionOf(f.name) === "pdf");
     const docs = list.filter((f) => isOriginalName(f.name) && extensionOf(f.name) !== "pdf");
     setError(undefined);
-    if (docs[0]) setOriginal(docs[0]);
+    if (docs[0]) chooseOriginal(docs[0]);
     if (docs[0] && pdfs[0]) setPdf(pdfs[0]);
     else if (!docs[0] && pdfs[0]) {
       // PDF만 떨어뜨리면: 원고가 이미 있으면 미리보기로, 없으면 원고 자체로.
       if (original && !originalIsPdf) setPdf(pdfs[0]);
-      else setOriginal(pdfs[0]);
+      else chooseOriginal(pdfs[0]);
     }
     if (!docs[0] && !pdfs[0] && list[0]) {
       setError("원고는 한글(hwp, hwpx)·워드(docx)·PDF 파일만 올릴 수 있습니다.");
@@ -79,21 +89,45 @@ export function UploadForm({ partId, storage }: { partId: string; storage: Exclu
     }
     setPending(true);
     setError(undefined);
+    // 한글 파일이고 PDF를 따로 안 붙였으면 브라우저에서 미리보기 PDF를 만든다.
+    let previewPdf = pdf;
+    if (!previewPdf && originalIsHwp && !convertFailed) {
+      try {
+        setConverting({ done: 0, total: 0 });
+        const bytes = await hwpToPdf(new Uint8Array(await original.arrayBuffer()), (done, total) =>
+          setConverting({ done, total }),
+        );
+        const base = original.name.replace(/\.(hwpx?|HWPX?)$/, "");
+        previewPdf = new File([bytes as BlobPart], `${base} (자동 변환).pdf`, { type: "application/pdf" });
+      } catch (e) {
+        setConvertFailed(true);
+        setPending(false);
+        setConverting(null);
+        setError(
+          `한글 파일을 읽어 PDF를 만들지 못했습니다(${e instanceof Error ? e.message : "알 수 없는 오류"}). ` +
+            "한글에서 [PDF로 저장]한 파일을 함께 올리거나, 미리보기 없이 그대로 올리려면 버튼을 한 번 더 누르세요.",
+        );
+        return;
+      } finally {
+        setConverting(null);
+      }
+    }
     setProgress(0);
     try {
       let originalRef: string;
       let pdfRef: string | null = null;
       if (storage === "blob") {
-        const total = original.size + (pdf?.size ?? 0);
+        const total = original.size + (previewPdf?.size ?? 0);
         originalRef = await putFile(original, (pct) => setProgress((pct * original.size) / total));
-        if (pdf) {
-          pdfRef = await putFile(pdf, (pct) => setProgress((original.size + (pct / 100) * pdf.size) / total * 100));
+        if (previewPdf) {
+          const p = previewPdf;
+          pdfRef = await putFile(p, (pct) => setProgress(((original.size + (pct / 100) * p.size) / total) * 100));
         }
       } else {
         const form = new FormData();
         form.set("partId", partId);
         form.set("original", original);
-        if (pdf) form.set("pdf", pdf);
+        if (previewPdf) form.set("pdf", previewPdf);
         const res = await fetch("/api/upload", { method: "POST", body: form });
         const json = (await res.json()) as { originalRef?: string; pdfRef?: string | null; error?: string };
         if (!res.ok || !json.originalRef) throw new Error(json.error ?? "업로드에 실패했습니다.");
@@ -107,12 +141,13 @@ export function UploadForm({ partId, storage }: { partId: string; storage: Exclu
         originalName: original.name,
         originalSize: original.size,
         pdfRef,
-        pdfName: pdf?.name ?? null,
+        pdfName: previewPdf?.name ?? null,
         note,
       });
       if (!result.ok) throw new Error(result.error);
       setOriginal(null);
       setPdf(null);
+      setConvertFailed(false);
       setNote("");
       if (originalInput.current) originalInput.current.value = "";
       if (pdfInput.current) pdfInput.current.value = "";
@@ -149,7 +184,8 @@ export function UploadForm({ partId, storage }: { partId: string; storage: Exclu
         )}
       >
         <p className="text-sm text-ink-2">
-          한글(hwp, hwpx)·워드(docx)·PDF 파일을 여기에 끌어다 놓거나 아래에서 고르세요. 최대 100MB.
+          한글(hwp, hwpx)·워드(docx)·PDF 파일을 여기에 끌어다 놓거나 아래에서 고르세요. 최대 100MB. 한글 파일은 올릴 때
+          사이트가 미리보기 PDF를 자동으로 만듭니다.
         </p>
         <Field label="원고 파일" hint={original ? `${original.name} · ${formatBytes(original.size)}` : undefined}>
           <Input
@@ -159,21 +195,20 @@ export function UploadForm({ partId, storage }: { partId: string; storage: Exclu
             disabled={pending}
             onChange={(e) => {
               const f = e.currentTarget.files?.[0];
-              if (f) {
-                setError(undefined);
-                setOriginal(f);
-              }
+              if (f) chooseOriginal(f);
             }}
             className="file:mr-3 file:border file:border-ink file:bg-paper file:px-3 file:py-1 file:font-bold"
           />
         </Field>
         {!originalIsPdf && (
           <Field
-            label="미리보기용 PDF (한글·워드 원고일 때)"
+            label={originalIsHwp ? "미리보기용 PDF (선택)" : "미리보기용 PDF (워드 원고일 때)"}
             hint={
               pdf
                 ? `${pdf.name} · ${formatBytes(pdf.size)}`
-                : "한글·워드에서 [PDF로 저장]한 파일을 함께 올리면 사이트 안에서 바로 펼쳐 볼 수 있습니다."
+                : originalIsHwp
+                  ? "한글에서 [PDF로 저장]한 파일을 붙이면 자동 변환 대신 그 PDF를 씁니다. 표·글꼴이 많은 원고는 이쪽이 더 정확합니다."
+                  : "워드에서 [PDF로 저장]한 파일을 함께 올리면 사이트 안에서 바로 펼쳐 볼 수 있습니다."
             }
           >
             <Input
@@ -202,6 +237,11 @@ export function UploadForm({ partId, storage }: { partId: string; storage: Exclu
         </p>
       )}
       <FormError message={error} />
+      {converting && (
+        <p aria-live="polite" className="text-sm text-ink-2">
+          한글 원고를 읽어 미리보기 PDF를 만드는 중…{converting.total ? ` (${converting.done}/${converting.total}쪽)` : ""}
+        </p>
+      )}
       {progress !== null && (
         <div aria-live="polite" className="flex items-center gap-3 text-sm">
           <span className="h-2 flex-1 bg-rb-tint">
@@ -211,7 +251,7 @@ export function UploadForm({ partId, storage }: { partId: string; storage: Exclu
         </div>
       )}
       <Button type="submit" variant="primary" pending={pending} pendingLabel="올리는 중…" disabled={!original}>
-        {original ? "이 파일로 새 버전 올리기" : "새 버전 올리기"}
+        {convertFailed ? "미리보기 없이 올리기" : original ? "이 파일로 새 버전 올리기" : "새 버전 올리기"}
       </Button>
     </form>
   );
