@@ -14,11 +14,20 @@ export type StorageKind = "blob" | "local" | "none";
 
 export const LOCAL_PREFIX = "local:";
 
-/** Vercel인데 Blob 토큰이 없으면 "none": 서버 디스크에 쓸 수 없으므로 올리기를 막고 안내한다. */
+/**
+ * Blob 자격: 읽기·쓰기 토큰(BLOB_READ_WRITE_TOKEN) 또는 프로젝트에 연결된 스토어(BLOB_STORE_ID + Vercel OIDC).
+ * Vercel인데 둘 다 없으면 "none": 서버 디스크에 쓸 수 없으므로 올리기를 막고 안내한다.
+ */
 export function storageKind(): StorageKind {
-  if (process.env.BLOB_READ_WRITE_TOKEN) return "blob";
+  if (process.env.BLOB_READ_WRITE_TOKEN || process.env.BLOB_STORE_ID) return "blob";
   if (process.env.VERCEL) return "none";
   return "local";
+}
+
+/** 브라우저 직접 업로드 방식: 읽기·쓰기 토큰이 있으면 클라이언트 토큰, 아니면 프로젝트 연결(OIDC)의 presigned URL. */
+export type BlobUploadMode = "token" | "presigned";
+export function blobUploadMode(): BlobUploadMode {
+  return process.env.BLOB_READ_WRITE_TOKEN ? "token" : "presigned";
 }
 
 export function uploadDir(): string {

@@ -3,7 +3,7 @@ import { requireUser } from "@/lib/auth/current";
 import { extensionOf, formatBytes } from "@/lib/files";
 import { computePartStatus } from "@/lib/part-status";
 import { canEditPart } from "@/lib/permissions";
-import { fileUrl, storageKind } from "@/lib/storage";
+import { blobUploadMode, fileUrl, storageKind } from "@/lib/storage";
 import { getPartForViewer, listVersions, type VersionRow } from "@/lib/versions";
 import { BackLink } from "@/components/BackLink";
 import { ButtonLink } from "@/components/Button";
@@ -118,7 +118,7 @@ export default async function PartPage({
                     연결하면 올릴 수 있습니다.
                   </p>
                 ) : (
-                  <UploadForm partId={part.id} storage={storage} />
+                  <UploadForm partId={part.id} storage={storage} blobMode={blobUploadMode()} />
                 )}
               </div>
             </Card>

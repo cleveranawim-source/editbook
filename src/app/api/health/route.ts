@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db";
 import { ensureAdminFromEnv } from "@/lib/startup";
+import { blobUploadMode, storageKind } from "@/lib/storage";
 
 export const dynamic = "force-dynamic";
 
@@ -10,6 +11,7 @@ export async function GET() {
     db: "unknown",
     admin: false,
     adminEnv: Boolean(process.env.ADMIN_PASSWORD),
+    storage: storageKind() === "blob" ? `blob(${blobUploadMode()})` : storageKind(),
   };
   try {
     out.startup = await ensureAdminFromEnv();

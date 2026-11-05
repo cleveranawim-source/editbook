@@ -2,12 +2,12 @@
 
 import { useRef, useState, type DragEvent } from "react";
 import { useRouter } from "next/navigation";
-import { upload } from "@vercel/blob/client";
+import { upload, uploadPresigned } from "@vercel/blob/client";
 import { createVersionAction } from "./actions";
 import { Button } from "@/components/Button";
 import { cx } from "@/components/cx";
 import { Field, FormError, Input } from "@/components/Field";
-import type { StorageKind } from "@/lib/storage";
+import type { BlobUploadMode, StorageKind } from "@/lib/storage";
 import { extensionOf, formatBytes, isOriginalName, MAX_FILE_BYTES, ORIGINAL_ACCEPT, safeFilename } from "@/lib/files";
 import { hwpToPdf, isHwpName } from "@/lib/hwp-client";
 
@@ -16,7 +16,15 @@ import { hwpToPdf, isHwpName } from "@/lib/hwp-client";
  * Blob 방식이면 브라우저가 Blob에 바로 올리고, 로컬 방식이면 /api/upload로 보낸다.
  * 어느 쪽이든 끝난 뒤 서버 액션으로 버전 한 줄을 남긴다.
  */
-export function UploadForm({ partId, storage }: { partId: string; storage: Exclude<StorageKind, "none"> }) {
+export function UploadForm({
+  partId,
+  storage,
+  blobMode,
+}: {
+  partId: string;
+  storage: Exclude<StorageKind, "none">;
+  blobMode: BlobUploadMode;
+}) {
   const router = useRouter();
   const [original, setOriginal] = useState<File | null>(null);
   const [pdf, setPdf] = useState<File | null>(null);
@@ -66,7 +74,8 @@ export function UploadForm({ partId, storage }: { partId: string; storage: Exclu
 
   async function putFile(file: File, onProgress: (pct: number) => void): Promise<string> {
     if (storage === "blob") {
-      const result = await upload(`parts/${partId}/${safeFilename(file.name)}`, file, {
+      const put = blobMode === "presigned" ? uploadPresigned : upload;
+      const result = await put(`parts/${partId}/${safeFilename(file.name)}`, file, {
         access: "public",
         handleUploadUrl: "/api/blob/upload",
         clientPayload: JSON.stringify({ partId }),
