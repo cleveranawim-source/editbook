@@ -19,5 +19,7 @@ else
     npx prisma db seed
   fi
 fi
+echo "== 브라우저용 외부 파일 복사(pdf.js 워커, rhwp wasm) =="
+node scripts/copy-vendor.mjs
 echo "== next build =="
 npx next build
