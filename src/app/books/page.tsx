@@ -26,6 +26,9 @@ export default async function BooksPage() {
               <ButtonLink href="/admin/books" variant="primary" className="flex-1 md:flex-none">
                 책 관리
               </ButtonLink>
+              <ButtonLink href="/admin/status" variant="secondary" className="flex-1 md:flex-none">
+                운영 상태
+              </ButtonLink>
             </div>
             <p className="mt-2 text-[13px] leading-snug text-ink-2 md:text-right">
               선생님 계정은 계정 관리에서, 책은 책 관리에서 만듭니다.

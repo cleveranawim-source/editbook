@@ -8,7 +8,8 @@ import {
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth/current";
 import { AppError } from "@/lib/errors";
-import { MAX_FILE_BYTES } from "@/lib/files";
+import { MAX_ATTACHMENT_BYTES, MAX_FILE_BYTES, MAX_MATERIAL_BYTES, type UploadPurpose } from "@/lib/files";
+import { assertCanAddMaterial } from "@/lib/materials";
 import { blobUploadMode, storageKind } from "@/lib/storage";
 import { assertCanUpload, assertOriginalName } from "@/lib/versions";
 
@@ -16,15 +17,20 @@ export const dynamic = "force-dynamic";
 
 const ONE_HOUR = 60 * 60 * 1000;
 
-/** 올릴 권한이 있는지 확인한 뒤 파트 id를 돌려준다. */
-async function authorize(pathname: string, clientPayload: string | null): Promise<string> {
+/** 올릴 권한이 있는지 확인한 뒤 파트 id와 크기 한도를 돌려준다. */
+async function authorize(pathname: string, clientPayload: string | null): Promise<{ partId: string; max: number }> {
   const user = await getCurrentUser();
   if (!user || user.mustChangePassword) throw new AppError("로그인이 필요합니다.");
-  const payload = JSON.parse(clientPayload ?? "{}") as { partId?: string };
+  const payload = JSON.parse(clientPayload ?? "{}") as { partId?: string; purpose?: UploadPurpose };
   if (!payload.partId) throw new AppError("파트 정보가 없습니다.");
+  const purpose = payload.purpose ?? "version";
+  if (purpose === "material" || purpose === "attachment") {
+    await assertCanAddMaterial(payload.partId, user);
+    return { partId: payload.partId, max: purpose === "material" ? MAX_MATERIAL_BYTES : MAX_ATTACHMENT_BYTES };
+  }
   await assertCanUpload(payload.partId, user);
   assertOriginalName(pathname);
-  return payload.partId;
+  return { partId: payload.partId, max: MAX_FILE_BYTES };
 }
 
 /**
@@ -46,18 +52,18 @@ export async function POST(request: Request): Promise<NextResponse> {
         body: body as HandleUploadPresignedBody,
         request,
         getSignedToken: async (pathname, clientPayload) => {
-          const partId = await authorize(pathname, clientPayload);
+          const { partId, max } = await authorize(pathname, clientPayload);
           const token = await issueSignedToken({
             pathname,
             operations: ["put"],
-            maximumSizeInBytes: MAX_FILE_BYTES,
+            maximumSizeInBytes: max,
             validUntil: Date.now() + ONE_HOUR,
           });
           return {
             token,
             urlOptions: {
               addRandomSuffix: true,
-              maximumSizeInBytes: MAX_FILE_BYTES,
+              maximumSizeInBytes: max,
               validUntil: Date.now() + ONE_HOUR,
               tokenPayload: JSON.stringify({ partId }),
             },
@@ -70,9 +76,9 @@ export async function POST(request: Request): Promise<NextResponse> {
       body: body as HandleUploadBody,
       request,
       onBeforeGenerateToken: async (pathname, clientPayload) => {
-        const partId = await authorize(pathname, clientPayload);
+        const { partId, max } = await authorize(pathname, clientPayload);
         return {
-          maximumSizeInBytes: MAX_FILE_BYTES,
+          maximumSizeInBytes: max,
           addRandomSuffix: true,
           tokenPayload: JSON.stringify({ partId }),
         };

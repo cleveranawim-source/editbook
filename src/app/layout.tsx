@@ -68,6 +68,9 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
                     <ButtonLink href="/admin/books" size="sm">
                       책 관리
                     </ButtonLink>
+                    <ButtonLink href="/admin/status" size="sm" className="hidden lg:inline-flex">
+                      운영 상태
+                    </ButtonLink>
                   </nav>
                 )}
                 <NotificationBell initial={unread} />

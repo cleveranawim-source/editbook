@@ -14,6 +14,8 @@ import { EmptyState } from "@/components/EmptyState";
 import { StatusBadge } from "@/components/StatusBadge";
 import { TurnTag } from "@/components/Tag";
 import { HwpViewer } from "./hwp-viewer";
+import { PartTabs } from "./part-tabs";
+import { materialCount } from "@/lib/materials";
 import { PartWorkspace } from "./part-workspace";
 import { CompletePartButton, DeleteVersionButton } from "./small-actions";
 import { UploadForm } from "./upload-form";
@@ -40,7 +42,7 @@ export default async function PartPage({
   const found = await getPartForViewer(partId, user);
   if (!found || found.part.bookId !== bookId) notFound();
   const { part, book, role } = found;
-  const [versions, requests] = await Promise.all([listVersions(partId), listRequestViews(partId)]);
+  const [versions, requests, materials] = await Promise.all([listVersions(partId), listRequestViews(partId), materialCount(partId)]);
   const wanted = v ? Number(v) : NaN;
   const current = versions.find((x) => x.number === wanted) ?? versions[0];
   const latest = versions[0];
@@ -164,10 +166,23 @@ export default async function PartPage({
             <a href={fileUrl(current.originalRef, { download: true })} className={buttonClass("secondary")}>
               원본 내려받기
             </a>
+            {versions.filter((x) => x.pdfRef).length >= 2 && (
+              <a href={`/books/${book.id}/parts/${part.id}/compare`} className={buttonClass("quiet")}>
+                두 버전 비교
+              </a>
+            )}
             {active && perspective === "editor" && <CompletePartButton partId={part.id} completed={completed} />}
           </div>
         )}
       </Card>
+
+      <PartTabs
+        bookId={book.id}
+        partId={part.id}
+        active="manuscript"
+        materialCount={materials}
+        openRequests={requests.filter((x) => !isClosed(x.status)).length}
+      />
 
       <PartWorkspace
         partId={part.id}
@@ -179,6 +194,7 @@ export default async function PartPage({
         initialSelectedId={r}
         fallback={fallback}
         side={side}
+        upload={storage === "none" ? null : { partId: part.id, storage, blobMode: blobUploadMode() }}
       />
     </div>
   );

@@ -6,6 +6,8 @@ import { AppError } from "@/lib/errors";
 import {
   addComment,
   createRequest,
+  moveRequest,
+  type Attachment,
   rerequest,
   resolveRequest,
   notifyNewVersion,
@@ -83,10 +85,10 @@ async function partOfRequest(requestId: string): Promise<string | null> {
   return r?.partId ?? null;
 }
 
-export async function commentAction(requestId: string, body: string): Promise<ActionResult> {
+export async function commentAction(requestId: string, body: string, attachment?: Attachment | null): Promise<ActionResult> {
   const user = await requireUser();
   return run(async () => {
-    await addComment(user, requestId, body);
+    await addComment(user, requestId, body, attachment);
     const partId = await partOfRequest(requestId);
     if (partId) await refreshPart(partId);
   });
@@ -124,5 +126,14 @@ export async function deleteVersionAction(versionId: string): Promise<ActionResu
     const { partId, refs } = await deleteVersion(versionId, user);
     await deleteStoredFiles(refs);
     if (await getPartForViewer(partId, user)) await refreshPart(partId);
+  });
+}
+
+export async function moveRequestAction(requestId: string, input: Rect & { versionId: string }): Promise<ActionResult> {
+  const user = await requireUser();
+  return run(async () => {
+    await moveRequest(user, requestId, input);
+    const partId = await partOfRequest(requestId);
+    if (partId) await refreshPart(partId);
   });
 }

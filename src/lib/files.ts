@@ -30,6 +30,16 @@ const CONTENT_TYPES: Record<string, string> = {
   docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
   hwp: "application/x-hwp",
   hwpx: "application/hwp+zip",
+  jpg: "image/jpeg",
+  jpeg: "image/jpeg",
+  png: "image/png",
+  gif: "image/gif",
+  webp: "image/webp",
+  avif: "image/avif",
+  zip: "application/zip",
+  mp4: "video/mp4",
+  mp3: "audio/mpeg",
+  txt: "text/plain; charset=utf-8",
 };
 
 export function contentTypeFor(name: string): string {
@@ -40,3 +50,8 @@ export function formatBytes(n: number): string {
   if (n < 1024 * 1024) return `${Math.max(1, Math.round(n / 1024))}KB`;
   return `${(n / (1024 * 1024)).toFixed(n < 10 * 1024 * 1024 ? 1 : 0)}MB`;
 }
+
+/** 올리는 목적별 크기 한도. */
+export const MAX_ATTACHMENT_BYTES = 100 * 1024 * 1024;
+export const MAX_MATERIAL_BYTES = 2 * 1024 * 1024 * 1024;
+export type UploadPurpose = "version" | "material" | "attachment";

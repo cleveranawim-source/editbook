@@ -16,6 +16,7 @@ export type CommentView = {
   action: CommentAction;
   versionNumber: number | null;
   createdAt: string;
+  attachment: { name: string; size: number | null; url: string } | null;
 };
 
 export type RequestView = Rect & {
@@ -71,3 +72,8 @@ export const COMMENT_ACTION_LABEL: Record<CommentAction, string> = {
   REREQUEST: "재요청",
   ANSWER: "답변",
 };
+
+/** 다른 버전에 표시된 요청을 지금 버전 위에 다시 그릴 수 있는가: 요청은 편집장, 질문은 담당 교사. */
+export function canRemark(kind: RequestKind, perspective: Perspective): boolean {
+  return (kind === "REQUEST" && perspective === "editor") || (kind === "QUESTION" && perspective === "author");
+}

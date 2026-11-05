@@ -2,12 +2,13 @@ import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth/current";
 import { contentTypeFor } from "@/lib/files";
 import { isLocalRef } from "@/lib/storage";
-import { findVersionByRef, getPartForViewer } from "@/lib/versions";
+import { findFileOwner } from "@/lib/file-index";
+import { getPartForViewer } from "@/lib/versions";
 
 export const dynamic = "force-dynamic";
 
 /**
- * Blob에 저장된 파일을 원래(한글) 이름으로 내려받게 한다. 책 참여자만.
+ * Blob에 저장된 파일(원고·미리보기·자료·첨부)을 원래(한글) 이름으로 내려받게 한다. 책 참여자만.
  * Blob 경로는 영문·숫자뿐이라 그대로 받으면 이름이 "k3x9.hwp"처럼 되기 때문에 서버가 이름을 붙여 흘려보낸다.
  */
 export async function GET(request: Request): Promise<Response> {
@@ -17,11 +18,11 @@ export async function GET(request: Request): Promise<Response> {
   }
   const user = await getCurrentUser();
   if (!user) return new NextResponse("로그인이 필요합니다.", { status: 401 });
-  const version = await findVersionByRef(ref);
-  if (!version) return new NextResponse("파일이 없습니다.", { status: 404 });
-  const view = await getPartForViewer(version.partId, user);
+  const owner = await findFileOwner(ref);
+  if (!owner) return new NextResponse("파일이 없습니다.", { status: 404 });
+  const view = await getPartForViewer(owner.partId, user);
   if (!view) return new NextResponse("파일이 없습니다.", { status: 404 });
-  const filename = ref === version.originalRef ? version.originalName : (version.pdfName ?? "미리보기.pdf");
+  const filename = owner.filename;
 
   const upstream = await fetch(ref);
   if (!upstream.ok || !upstream.body) return new NextResponse("파일을 받지 못했습니다.", { status: 502 });

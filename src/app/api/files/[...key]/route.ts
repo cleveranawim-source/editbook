@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth/current";
 import { AppError } from "@/lib/errors";
 import { contentTypeFor, LOCAL_PREFIX, readLocalFile } from "@/lib/storage";
-import { findVersionByRef, getPartForViewer } from "@/lib/versions";
+import { findFileOwner } from "@/lib/file-index";
+import { getPartForViewer } from "@/lib/versions";
 
 export const dynamic = "force-dynamic";
 
@@ -15,9 +16,9 @@ export async function GET(
   const key = segments.map(decodeURIComponent).join("/");
   const user = await getCurrentUser();
   if (!user) return new NextResponse("로그인이 필요합니다.", { status: 401 });
-  const version = await findVersionByRef(LOCAL_PREFIX + key);
-  if (!version) return new NextResponse("파일이 없습니다.", { status: 404 });
-  const view = await getPartForViewer(version.partId, user);
+  const owner = await findFileOwner(LOCAL_PREFIX + key);
+  if (!owner) return new NextResponse("파일이 없습니다.", { status: 404 });
+  const view = await getPartForViewer(owner.partId, user);
   if (!view) return new NextResponse("파일이 없습니다.", { status: 404 });
   let data: Buffer | null;
   try {
@@ -27,7 +28,7 @@ export async function GET(
     throw e;
   }
   if (!data) return new NextResponse("파일이 없습니다.", { status: 404 });
-  const filename = key.split("/").pop() ?? "file";
+  const filename = owner.filename;
   const download = new URL(request.url).searchParams.get("download") === "1";
   const disposition = `${download ? "attachment" : "inline"}; filename*=UTF-8''${encodeURIComponent(filename)}`;
   return new NextResponse(new Uint8Array(data), {

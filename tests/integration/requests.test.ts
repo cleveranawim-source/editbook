@@ -173,3 +173,39 @@ test("turnSummaryForBooks: teacher and editor see opposite turns", async () => {
   expect((await turnSummaryForBooks(e, new Map([[b.id, "EDITOR"]]))).get(b.id)).toEqual({ mine: 0, theirs: 1 });
   expect((await turnSummaryForBooks(e, new Map())).size).toBe(0);
 });
+
+test("comment attachments: optional body with a file, size limit, listed with a download url", async () => {
+  const { e, w, p, v1 } = await setup();
+  const r = await createRequest(e, { partId: p.id, versionId: v1.id, ...rect, body: "a" });
+  await addComment(w, r.id, "", { ref: `local:${p.id}/x/사진.jpg`, name: "사진.jpg", size: 1234 });
+  await expect(addComment(w, r.id, "", null)).rejects.toThrow("내용을 적어");
+  await expect(addComment(w, r.id, "x", { ref: "local:p/y/z", name: "z", size: 200 * 1024 * 1024 })).rejects.toThrow("100MB");
+  const [view] = await listRequestViews(p.id);
+  expect(view.status).toBe("RESPONDED");
+  expect(view.comments[0].attachment).toEqual({
+    name: "사진.jpg",
+    size: 1234,
+    url: `/api/files/${p.id}/x/%EC%82%AC%EC%A7%84.jpg?download=1`,
+  });
+  const { findFileOwner } = await import("@/lib/file-index");
+  expect(await findFileOwner(`local:${p.id}/x/사진.jpg`)).toEqual({ partId: p.id, filename: "사진.jpg" });
+});
+
+test("moveRequest: editor re-marks a request on a newer version; assignee re-marks a question; others refused", async () => {
+  const { e, w, o, p, v1 } = await setup();
+  const { moveRequest } = await import("@/lib/requests");
+  const r = await createRequest(e, { partId: p.id, versionId: v1.id, ...rect, body: "a" });
+  const q = await createRequest(w, { partId: p.id, versionId: v1.id, ...rect, body: "q" });
+  const v2 = await createVersion({ partId: p.id, uploadedById: w.id, originalRef: "local:p/m/2.pdf", originalName: "2.pdf", originalSize: 10 });
+  await expect(moveRequest(w, r.id, { versionId: v2.id, ...rect })).rejects.toThrow("다시 표시할 수 없습니다");
+  await expect(moveRequest(o, q.id, { versionId: v2.id, ...rect })).rejects.toThrow("다시 표시할 수 없습니다");
+  await moveRequest(e, r.id, { versionId: v2.id, page: 3, x: 0.5, y: 0.5, w: 0.2, h: 0.2 });
+  await moveRequest(w, q.id, { versionId: v2.id, ...rect });
+  const views = await listRequestViews(p.id);
+  expect(views.map((x) => [x.versionNumber, x.page])).toEqual([[2, 3], [2, 2]]);
+  expect(views[0].comments.at(-1)?.body).toBe("v2에 다시 표시했습니다.");
+  const v3 = await createVersion({ partId: p.id, uploadedById: w.id, originalRef: "local:p/m/3.docx", originalName: "3.docx", originalSize: 10 });
+  await expect(moveRequest(e, r.id, { versionId: v3.id, ...rect })).rejects.toThrow("미리보기 PDF가 있는 버전");
+  // 옮긴 뒤에는 v1에 달린 요청이 없으므로 v1을 지울 수 있다
+  await expect(deleteVersion(v1.id, e)).resolves.toBeTruthy();
+});

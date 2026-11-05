@@ -28,6 +28,7 @@ model User {
   editComments       EditRequestComment[]
   notifications      Notification[]
   pushSubscriptions  PushSubscription[]
+  materials          Material[]
 }
 
 model Session {
@@ -79,6 +80,7 @@ model Part {
   assignee       User?   @relation(fields: [assigneeUserId], references: [id], onDelete: SetNull)
   versions       Version[]
   requests       EditRequest[]
+  materials      Material[]
   /// 편집장이 "이 파트 완료"를 누른 버전. 최신 버전과 같을 때만 완료로 본다(새 버전이 오르면 저절로 풀림).
   completedVersionId String?
 
@@ -167,6 +169,10 @@ model EditRequestComment {
   action    EditCommentAction @default(NOTE)
   /// 새 버전으로 응답했을 때 그 버전
   versionId String?
+  /// 첨부 파일(선택)
+  attachmentRef  String?
+  attachmentName String?
+  attachmentSize Int?
   createdAt DateTime          @default(now())
   request   EditRequest       @relation(fields: [requestId], references: [id], onDelete: Cascade)
   author    User?             @relation(fields: [authorId], references: [id], onDelete: SetNull)
@@ -207,4 +213,32 @@ model PushSubscription {
 model AppSetting {
   key   String @id
   value String
+}
+
+enum MaterialKind {
+  FILE
+  LINK
+}
+
+/// 파트 자료함 한 줄: 올린 파일(사진·참고 자료) 또는 외부 링크(구글 드라이브 등).
+model Material {
+  id           String       @id @default(cuid())
+  partId       String
+  kind         MaterialKind
+  title        String
+  note         String       @default("")
+  /// FILE: 저장 위치 표시자
+  ref          String?
+  /// FILE: 사진이면 작은 미리보기 그림
+  thumbRef     String?
+  size         BigInt?
+  contentType  String?
+  /// LINK: 바깥 주소
+  url          String?
+  uploadedById String?
+  createdAt    DateTime     @default(now())
+  part         Part         @relation(fields: [partId], references: [id], onDelete: Cascade)
+  uploadedBy   User?        @relation(fields: [uploadedById], references: [id], onDelete: SetNull)
+
+  @@index([partId, createdAt])
 }

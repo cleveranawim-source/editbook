@@ -1,7 +1,9 @@
 import { prisma } from "@/lib/db";
 import { AppError } from "@/lib/errors";
 import type { Actor } from "@/lib/permissions";
-import { clampRect, type Perspective, type Rect, type RequestView } from "@/lib/request-view";
+import { canRemark, clampRect, type Perspective, type Rect, type RequestView } from "@/lib/request-view";
+import { fileUrl } from "@/lib/storage";
+import { MAX_ATTACHMENT_BYTES } from "@/lib/files";
 import { getPartForViewer, type PartView } from "@/lib/versions";
 import { editorIds, notify, partUrl } from "@/lib/notify";
 import type { EditCommentAction, EditRequest, Prisma } from "@/generated/prisma/client";
@@ -101,10 +103,15 @@ async function loadRequest(requestId: string, actor: Actor) {
  * - 담당 교사가 열린 요청에 답하면 → 응답함
  * - 편집장이 열린 질문에 답하면 → 답변됨
  */
-export async function addComment(actor: Actor, requestId: string, rawBody: string): Promise<void> {
+export type Attachment = { ref: string; name: string; size: number };
+
+export async function addComment(actor: Actor, requestId: string, rawBody: string, attachment?: Attachment | null): Promise<void> {
   const { req, perspective, view, url } = await loadRequest(requestId, actor);
   if (perspective === "other") throw new AppError("편집장과 이 파트 담당 선생님만 댓글을 달 수 있습니다.");
-  const body = cleanBody(rawBody, true);
+  if (attachment && (!attachment.ref || attachment.size <= 0 || attachment.size > MAX_ATTACHMENT_BYTES)) {
+    throw new AppError("첨부 파일은 100MB까지 올릴 수 있습니다.");
+  }
+  const body = cleanBody(rawBody, !attachment);
   let action: EditCommentAction = "NOTE";
   let status = req.status;
   if (req.kind === "REQUEST" && req.status === "OPEN" && perspective === "author") {
@@ -115,7 +122,17 @@ export async function addComment(actor: Actor, requestId: string, rawBody: strin
     status = "ANSWERED";
   }
   await prisma.$transaction([
-    prisma.editRequestComment.create({ data: { requestId, authorId: actor.id, body, action } }),
+    prisma.editRequestComment.create({
+      data: {
+        requestId,
+        authorId: actor.id,
+        body,
+        action,
+        attachmentRef: attachment?.ref ?? null,
+        attachmentName: attachment ? attachment.name.trim().slice(0, 200) || "첨부" : null,
+        attachmentSize: attachment ? Math.round(attachment.size) : null,
+      },
+    }),
     prisma.editRequest.update({ where: { id: requestId }, data: { status } }),
   ]);
   const who = await nameOf(actor.id);
@@ -242,6 +259,9 @@ export async function listRequestViews(partId: string): Promise<RequestView[]> {
       action: c.action,
       versionNumber: c.version?.number ?? null,
       createdAt: c.createdAt.toISOString(),
+      attachment: c.attachmentRef
+        ? { name: c.attachmentName ?? "첨부", size: c.attachmentSize, url: fileUrl(c.attachmentRef, { download: true }) }
+        : null,
     })),
   }));
 }
@@ -311,4 +331,21 @@ export async function notifyNewVersion(actor: Actor, versionId: string, responde
     },
     actor.id,
   );
+}
+
+/** 예전 버전에 표시된 요청을 다른 버전 위에 다시 그린다(요청은 편집장, 질문은 담당 교사). */
+export async function moveRequest(actor: Actor, requestId: string, input: Rect & { versionId: string }): Promise<void> {
+  const { req, perspective } = await loadRequest(requestId, actor);
+  if (!canRemark(req.kind, perspective)) throw new AppError("이 요청을 다시 표시할 수 없습니다.");
+  const version = await prisma.version.findUnique({ where: { id: input.versionId } });
+  if (!version || version.partId !== req.partId) throw new AppError("버전을 찾을 수 없습니다.");
+  if (!version.pdfRef) throw new AppError("미리보기 PDF가 있는 버전에만 표시할 수 있습니다.");
+  const rect = clampRect(input);
+  if (rect.w < 0.005 || rect.h < 0.005) throw new AppError("영역이 너무 작습니다. 조금 더 크게 그려 주세요.");
+  await prisma.$transaction([
+    prisma.editRequest.update({ where: { id: requestId }, data: { versionId: version.id, ...rect } }),
+    prisma.editRequestComment.create({
+      data: { requestId, authorId: actor.id, body: `v${version.number}에 다시 표시했습니다.`, action: "NOTE", versionId: version.id },
+    }),
+  ]);
 }

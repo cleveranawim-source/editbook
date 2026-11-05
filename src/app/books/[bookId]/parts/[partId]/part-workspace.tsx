@@ -8,7 +8,8 @@ import { cx } from "@/components/cx";
 import { EmptyState } from "@/components/EmptyState";
 import { FormError, Textarea } from "@/components/Field";
 import { isClosed, toneFor, type Perspective, type Rect, type RequestView, type Tone } from "@/lib/request-view";
-import { createRequestAction } from "./actions";
+import { createRequestAction, moveRequestAction } from "./actions";
+import type { UploadTarget } from "@/lib/upload-client";
 import { PdfViewer } from "./pdf-viewer";
 import { RequestCard } from "./request-card";
 
@@ -41,6 +42,7 @@ export function PartWorkspace({
   initialSelectedId,
   fallback,
   side,
+  upload,
 }: {
   partId: string;
   version: { id: string; number: number } | null;
@@ -53,7 +55,10 @@ export function PartWorkspace({
   fallback: ReactNode;
   /** 요청 목록 아래 오른쪽 기둥에 놓을 카드들(새 버전 올리기, 버전 목록) */
   side: ReactNode;
+  /** 댓글 첨부를 올릴 곳(저장소가 없으면 null) */
+  upload: Omit<UploadTarget, "purpose"> | null;
 }) {
+  const [remarkId, setRemarkId] = useState<string | null>(null);
   const router = useRouter();
   const [selectedId, setSelectedId] = useState<string | undefined>(initialSelectedId);
   const [drawing, setDrawing] = useState(false);
@@ -82,10 +87,7 @@ export function PartWorkspace({
   }, [selectedId, renderTick]);
 
   function select(r: RequestView) {
-    if (r.versionId !== version?.id) {
-      router.push(`?v=${r.versionNumber}&r=${r.id}`);
-      return;
-    }
+    // 다른 버전의 요청: 처음 누르면 카드만 펼쳐(다시 표시·그 버전 보기를 고를 수 있게), 다시 누르면 접는다.
     setSelectedId(r.id === selectedId ? undefined : r.id);
   }
 
@@ -129,8 +131,20 @@ export function PartWorkspace({
     const r = rectFrom(d.page, d.x0, d.y0, p.x, p.y);
     setLive(null);
     if (r.w < 0.01 || r.h < 0.005) return;
-    setDraft(r);
     setDrawing(false);
+    if (remarkId && version) {
+      const id = remarkId;
+      setRemarkId(null);
+      void moveRequestAction(id, { ...r, versionId: version.id }).then((res) => {
+        if (!res.ok) setDraftError(res.error);
+        else {
+          setSelectedId(id);
+          router.refresh();
+        }
+      });
+      return;
+    }
+    setDraft(r);
     setDraftError(undefined);
   }
 
@@ -223,6 +237,7 @@ export function PartWorkspace({
                   aria-pressed={drawing}
                   onClick={() => {
                     setDrawing((d) => !d);
+                    setRemarkId(null);
                     setLive(null);
                   }}
                   className="mr-2"
@@ -237,9 +252,12 @@ export function PartWorkspace({
         )}
         {drawing && (
           <p role="status" className="border-t border-rule bg-rb-tint px-4 py-2 text-sm font-bold">
-            원고 위에서 고칠 곳을 끌어서 네모로 표시하세요.
+            {remarkId
+              ? `${requests.find((x) => x.id === remarkId)?.number ?? ""}번을 이 버전 위에 다시 그리세요. 끌어서 네모로 표시합니다.`
+              : "원고 위에서 고칠 곳을 끌어서 네모로 표시하세요."}
           </p>
         )}
+        {draftError && !draft && <p className="border-t border-rule px-4 py-2 text-sm text-st-red-fg">{draftError}</p>}
       </Card>
 
       <div className="flex flex-col gap-7">
@@ -319,6 +337,14 @@ export function PartWorkspace({
                   selected={r.id === selectedId}
                   onCurrentVersion={r.versionId === version?.id}
                   onSelect={() => select(r)}
+                  upload={upload}
+                  remarkAvailable={canMark}
+                  onRemark={() => {
+                    setRemarkId(r.id);
+                    setDrawing(true);
+                    setDraft(null);
+                    window.scrollTo({ top: 0, behavior: "smooth" });
+                  }}
                 />
               ))}
             </ul>

@@ -1,12 +1,15 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/Button";
 import { cx } from "@/components/cx";
-import { FormError, Textarea } from "@/components/Field";
+import { FormError, Input, Textarea } from "@/components/Field";
+import { formatBytes, MAX_ATTACHMENT_BYTES } from "@/lib/files";
+import { uploadFile, type UploadTarget } from "@/lib/upload-client";
 import { StatusBadge } from "@/components/StatusBadge";
 import {
+  canRemark,
   COMMENT_ACTION_LABEL,
   statusLabel,
   toneFor,
@@ -30,6 +33,9 @@ export function RequestCard({
   selected,
   onCurrentVersion,
   onSelect,
+  upload,
+  onRemark,
+  remarkAvailable,
 }: {
   request: RequestView;
   perspective: Perspective;
@@ -38,7 +44,15 @@ export function RequestCard({
   /** 지금 펼친 버전에 그려진 요청인가 */
   onCurrentVersion: boolean;
   onSelect: () => void;
+  /** 댓글 첨부를 올릴 곳. 없으면 첨부 칸을 숨긴다. */
+  upload?: Omit<UploadTarget, "purpose"> | null;
+  /** 지금 버전 위에 다시 그리기 시작 */
+  onRemark?: () => void;
+  /** 지금 펼친 버전에 미리보기 PDF가 있어 다시 표시할 수 있는가 */
+  remarkAvailable?: boolean;
 }) {
+  const [file, setFile] = useState<File | null>(null);
+  const fileInput = useRef<HTMLInputElement>(null);
   const router = useRouter();
   const [text, setText] = useState("");
   const [error, setError] = useState<string | undefined>();
@@ -54,9 +68,26 @@ export function RequestCard({
       if (!res.ok) setError(res.error);
       else {
         setText("");
+        setFile(null);
+        if (fileInput.current) fileInput.current.value = "";
         router.refresh();
       }
     });
+  }
+
+  async function sendComment(): Promise<ActionResult> {
+    let attachment = null;
+    if (file) {
+      if (!upload) return { ok: false, error: "파일 저장소가 연결되지 않았습니다." };
+      if (file.size > MAX_ATTACHMENT_BYTES) return { ok: false, error: "첨부 파일은 100MB까지 올릴 수 있습니다." };
+      try {
+        const { ref } = await uploadFile({ ...upload, purpose: "attachment" }, file);
+        attachment = { ref, name: file.name, size: file.size };
+      } catch (e) {
+        return { ok: false, error: e instanceof Error ? e.message : "첨부를 올리지 못했습니다." };
+      }
+    }
+    return commentAction(r.id, text, attachment);
   }
 
   const primary =
@@ -112,9 +143,29 @@ export function RequestCard({
                   )}
                   <span className="text-[12px] text-ink-3">{when.format(new Date(c.createdAt))}</span>
                   {c.body && <p className="whitespace-pre-wrap leading-relaxed">{c.body}</p>}
+                  {c.attachment && (
+                    <a href={c.attachment.url} className="mt-0.5 inline-flex items-center gap-1 text-[13px] text-ink underline">
+                      첨부: {c.attachment.name}
+                      {c.attachment.size !== null && <span className="text-ink-3 no-underline"> ({formatBytes(c.attachment.size)})</span>}
+                    </a>
+                  )}
                 </li>
               ))}
             </ol>
+          )}
+
+          {selected && !onCurrentVersion && (
+            <a href={`?v=${r.versionNumber}&r=${r.id}`} className="mt-2 inline-block text-[13px] font-bold text-ink underline">
+              v{r.versionNumber}에서 이 자리 보기
+            </a>
+          )}
+          {selected && canWrite && !onCurrentVersion && remarkAvailable && onRemark && canRemark(r.kind, perspective) && (
+            <div className="mt-3 flex flex-wrap items-center gap-2 border border-dashed border-rb-line p-2.5 text-[13px]">
+              <span className="text-ink-2">지금 보고 있는 버전 위에 이 {r.kind === "QUESTION" ? "질문" : "요청"}을 다시 그릴 수 있습니다.</span>
+              <Button size="sm" variant="secondary" onClick={onRemark}>
+                이 버전에 다시 표시
+              </Button>
+            </div>
           )}
 
           {selected && canWrite && perspective !== "other" && (
@@ -122,7 +173,7 @@ export function RequestCard({
               className="mt-3 flex flex-col gap-2"
               onSubmit={(e) => {
                 e.preventDefault();
-                act(() => commentAction(r.id, text));
+                act(sendComment);
               }}
             >
               <Textarea
@@ -134,9 +185,21 @@ export function RequestCard({
                 aria-label={`${r.number}번에 댓글`}
                 disabled={pending}
               />
+              {upload && (
+                <label className="flex flex-col gap-1 text-[13px] font-bold text-ink-2">
+                  파일 첨부 (선택, 100MB까지)
+                  <Input
+                    ref={fileInput}
+                    type="file"
+                    disabled={pending}
+                    onChange={(e) => setFile(e.currentTarget.files?.[0] ?? null)}
+                    className="py-1.5 text-sm file:mr-2 file:border file:border-ink file:bg-paper file:px-2 file:py-0.5 file:font-bold"
+                  />
+                </label>
+              )}
               <FormError message={error} />
               <div className="flex flex-wrap gap-2">
-                <Button type="submit" variant="secondary" size="sm" pending={pending} disabled={!text.trim()}>
+                <Button type="submit" variant="secondary" size="sm" pending={pending} pendingLabel="보내는 중…" disabled={!text.trim() && !file}>
                   {primary}
                 </Button>
                 {canResolve && (

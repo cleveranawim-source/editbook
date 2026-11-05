@@ -3,6 +3,8 @@ import { getCurrentUser } from "@/lib/auth/current";
 import { AppError } from "@/lib/errors";
 import { makeLocalKey, saveLocalFile, storageKind } from "@/lib/storage";
 import { assertCanUpload, assertFileSize, assertOriginalName, assertPdfName } from "@/lib/versions";
+import { assertCanAddMaterial } from "@/lib/materials";
+import { MAX_ATTACHMENT_BYTES, MAX_MATERIAL_BYTES } from "@/lib/files";
 
 export const dynamic = "force-dynamic";
 
@@ -17,6 +19,20 @@ export async function POST(request: Request): Promise<NextResponse> {
     if (!user || user.mustChangePassword) throw new AppError("로그인이 필요합니다.");
     const form = await request.formData();
     const partId = String(form.get("partId") ?? "");
+    const purpose = String(form.get("purpose") ?? "version");
+    if (purpose === "material" || purpose === "attachment") {
+      await assertCanAddMaterial(partId, user);
+      const file = form.get("file");
+      if (!(file instanceof File) || file.size <= 0) throw new AppError("파일을 고르세요.");
+      if (file.size > (purpose === "material" ? MAX_MATERIAL_BYTES : MAX_ATTACHMENT_BYTES)) throw new AppError("파일이 너무 큽니다.");
+      const ref = await saveLocalFile(makeLocalKey(partId, file.name), new Uint8Array(await file.arrayBuffer()));
+      const thumb = form.get("thumb");
+      const thumbRef =
+        thumb instanceof File && thumb.size > 0
+          ? await saveLocalFile(makeLocalKey(partId, `thumb-${file.name}.jpg`), new Uint8Array(await thumb.arrayBuffer()))
+          : null;
+      return NextResponse.json({ ref, thumbRef });
+    }
     await assertCanUpload(partId, user);
     const original = form.get("original");
     if (!(original instanceof File)) throw new AppError("원고 파일을 고르세요.");
