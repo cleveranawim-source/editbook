@@ -1,5 +1,6 @@
 import { requireUser } from "@/lib/auth/current";
 import { listBooksForUser } from "@/lib/books";
+import { turnSummaryForBooks } from "@/lib/requests";
 import { BookCard } from "@/components/BookCard";
 import { ButtonLink } from "@/components/Button";
 import { EmptyState } from "@/components/EmptyState";
@@ -8,6 +9,7 @@ import { PageHeader } from "@/components/PageHeader";
 export default async function BooksPage() {
   const user = await requireUser();
   const books = await listBooksForUser(user.id);
+  const turns = await turnSummaryForBooks(user, new Map(books.map((b) => [b.book.id, b.role])));
   return (
     <>
       <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-start md:justify-between md:gap-8">
@@ -37,7 +39,7 @@ export default async function BooksPage() {
       ) : (
         <ul className="grid grid-cols-1 gap-7 md:grid-cols-2 xl:grid-cols-3">
           {books.map((b) => (
-            <BookCard key={b.book.id} {...b} />
+            <BookCard key={b.book.id} {...b} turns={turns.get(b.book.id)} />
           ))}
         </ul>
       )}

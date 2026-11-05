@@ -104,3 +104,26 @@ export async function latestVersionsByPart(bookId: string): Promise<Map<string, 
 export async function findVersionByRef(ref: string): Promise<Version | null> {
   return prisma.version.findFirst({ where: { OR: [{ originalRef: ref }, { pdfRef: ref }] } });
 }
+
+/**
+ * 버전 하나를 지운다(편집장·관리자). 요청이 달린 버전은 지울 수 없다.
+ * 돌려주는 값은 지운 파일의 저장 위치 표시자들 — 저장소에서 파일을 지우는 일은 부르는 쪽이 한다.
+ */
+export async function deleteVersion(versionId: string, actor: Actor): Promise<{ partId: string; bookId: string; refs: string[] }> {
+  const version = await prisma.version.findUnique({ where: { id: versionId }, include: { part: true } });
+  if (!version) throw new AppError("버전을 찾을 수 없습니다.");
+  const view = await getPartForViewer(version.partId, actor);
+  if (!view) throw new AppError("버전을 찾을 수 없습니다.");
+  if (view.book.status !== "ACTIVE") throw new AppError("보관된 책은 바꿀 수 없습니다.");
+  if (!(actor.isAdmin || view.role === "EDITOR")) throw new AppError("편집장만 버전을 지울 수 있습니다.");
+  const requestCount = await prisma.editRequest.count({ where: { versionId } });
+  if (requestCount > 0) throw new AppError(`요청 ${requestCount}개가 달린 버전이라 지울 수 없습니다.`);
+  await prisma.$transaction([
+    prisma.version.delete({ where: { id: versionId } }),
+    ...(version.part.completedVersionId === versionId
+      ? [prisma.part.update({ where: { id: version.partId }, data: { completedVersionId: null } })]
+      : []),
+  ]);
+  const refs = [version.originalRef, version.pdfRef].filter((r): r is string => Boolean(r));
+  return { partId: version.partId, bookId: version.part.bookId, refs: Array.from(new Set(refs)) };
+}

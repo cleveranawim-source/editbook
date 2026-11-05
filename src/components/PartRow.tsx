@@ -17,17 +17,19 @@ export function PartRow({
   part,
   status,
   mine,
+  myTurn,
   latest,
 }: {
   part: Part & { assignee: User | null };
   status: PartStatus;
   mine: boolean;
+  /** 보는 사람 기준 내 차례인가(교사: 요청이 남음, 편집장: 확인할 것이 있음) */
+  myTurn: boolean;
   /** 최신 원고 버전. 없으면 undefined. */
   latest?: Pick<Version, "number" | "createdAt">;
 }) {
   const sub = [part.note, latest ? `v${latest.number} · ${formatDate(latest.createdAt)}` : null].filter(Boolean).join(" · ");
   // 빨강 계열(연한 붉은 바탕 + 빨간 꼬리표)은 내 차례에만 쓴다. 내 파트는 꼬리표만.
-  const myTurn = status.kind === "REQUESTS";
   return (
     <li
       className={cx(

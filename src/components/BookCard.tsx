@@ -9,13 +9,15 @@ import { RoleTag } from "@/components/Tag";
  * (글자는 4.5:1 이상을 지키므로 opacity 대신 바탕만 옅게).
  */
 export function BookCard({
-  book, role, editorNames, memberCount, partCount,
+  book, role, editorNames, memberCount, partCount, turns,
 }: {
   book: Book;
   role: BookRole;
   editorNames: string[];
   memberCount: number;
   partCount: number;
+  /** 보는 사람 기준 내 차례·상대 차례 파트 수 */
+  turns?: { mine: number; theirs: number };
 }) {
   const archived = book.status === "ARCHIVED";
   const teachers = memberCount - editorNames.length;
@@ -37,6 +39,8 @@ export function BookCard({
         <div className="mt-auto flex flex-wrap gap-1.5 pt-4">
           <RoleTag role={role} />
           {archived && <StatusBadge tone="gray">보관됨</StatusBadge>}
+          {!archived && turns && turns.mine > 0 && <StatusBadge tone="red">내 차례 {turns.mine}</StatusBadge>}
+          {!archived && turns && turns.theirs > 0 && <StatusBadge tone="yellow">상대 차례 {turns.theirs}</StatusBadge>}
         </div>
       </Link>
     </li>

@@ -20,11 +20,15 @@ export function UploadForm({
   partId,
   storage,
   blobMode,
+  openRequests = [],
 }: {
   partId: string;
   storage: Exclude<StorageKind, "none">;
   blobMode: BlobUploadMode;
+  /** 이 버전으로 응답할 수 있는 열린 요청들 */
+  openRequests?: { id: string; number: number; body: string }[];
 }) {
+  const [respondsTo, setRespondsTo] = useState<string[]>([]);
   const router = useRouter();
   const [original, setOriginal] = useState<File | null>(null);
   const [pdf, setPdf] = useState<File | null>(null);
@@ -154,11 +158,13 @@ export function UploadForm({
         pdfRef,
         pdfName: previewPdf?.name ?? null,
         note,
+        respondsTo,
       });
       if (!result.ok) throw new Error(result.error);
       setOriginal(null);
       setPdf(null);
       setConvertFailed(false);
+      setRespondsTo([]);
       setNote("");
       if (originalInput.current) originalInput.current.value = "";
       if (pdfInput.current) pdfInput.current.value = "";
@@ -242,6 +248,30 @@ export function UploadForm({
       <Field label="메모 (선택)" hint="예: 1·3번 요청 반영">
         <Input value={note} onChange={(e) => setNote(e.currentTarget.value)} maxLength={200} disabled={pending} />
       </Field>
+      {openRequests.length > 0 && (
+        <fieldset className="flex flex-col gap-1.5">
+          <legend className="mb-1 text-sm font-bold text-ink-2">이 버전으로 응답하는 요청</legend>
+          {openRequests.map((q) => (
+            <label key={q.id} className="flex min-h-9 items-start gap-2.5 text-sm">
+              <input
+                type="checkbox"
+                className="mt-0.5 size-5 shrink-0 accent-rb"
+                checked={respondsTo.includes(q.id)}
+                disabled={pending}
+                onChange={(e) => {
+                  const on = e.currentTarget.checked;
+                  setRespondsTo((prev) => (on ? [...prev, q.id] : prev.filter((id) => id !== q.id)));
+                }}
+              />
+              <span className="min-w-0">
+                <span className="font-serif font-black text-rb">{q.number}</span>{" "}
+                <span className="line-clamp-2">{q.body}</span>
+              </span>
+            </label>
+          ))}
+          <span className="text-[12.5px] text-ink-3">고른 요청은 올리면 ‘응답함’이 되어 편집장 확인 차례로 넘어갑니다.</span>
+        </fieldset>
+      )}
       {needsPdfHint && (
         <p className="text-[13px] leading-snug text-st-amber-fg">
           PDF 없이 올리면 이 버전은 내려받아서만 볼 수 있고, 사이트 안 미리보기는 비어 있습니다.

@@ -1,4 +1,4 @@
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { randomBytes } from "node:crypto";
 import { AppError } from "@/lib/errors";
@@ -82,4 +82,26 @@ export function fileUrl(ref: string, opts?: { download?: boolean }): string {
   }
   if (opts?.download) return `/api/download?ref=${encodeURIComponent(ref)}`;
   return ref;
+}
+
+/** 저장소에서 파일을 지운다. 실패해도 멈추지 않는다(DB 기록은 이미 지워졌으므로 고아 파일이 남을 뿐). */
+export async function deleteStoredFiles(refs: string[]): Promise<void> {
+  const blobs = refs.filter((r) => !isLocalRef(r));
+  for (const ref of refs.filter(isLocalRef)) {
+    try {
+      const key = localKeyOf(ref);
+      assertSafeKey(key);
+      await rm(path.join(uploadDir(), key), { force: true });
+    } catch (e) {
+      console.warn("[editbook] 로컬 파일 삭제 실패", ref, e);
+    }
+  }
+  if (blobs.length > 0 && storageKind() === "blob") {
+    try {
+      const { del } = await import("@vercel/blob");
+      await del(blobs);
+    } catch (e) {
+      console.warn("[editbook] Blob 파일 삭제 실패", blobs, e);
+    }
+  }
 }

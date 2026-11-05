@@ -7,6 +7,6 @@ export async function resetDb(): Promise<void> {
     );
   }
   await prisma.$executeRawUnsafe(
-    'TRUNCATE "Version","Part","BookMember","Book","Session","User" CASCADE',
+    'TRUNCATE "EditRequestComment","EditRequest","Version","Part","BookMember","Book","Session","User" CASCADE',
   );
 }

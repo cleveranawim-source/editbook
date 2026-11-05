@@ -2,9 +2,10 @@ import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/auth/current";
 import { getBookForViewer, getBookSummary, listBooksForUser } from "@/lib/books";
 import { listParts } from "@/lib/parts";
-import { computePartStatus, type PartStatus } from "@/lib/part-status";
+import { computePartStatus, viewerTone, viewerTurn } from "@/lib/part-status";
 import { canManageBook } from "@/lib/permissions";
 import { latestVersionsByPart } from "@/lib/versions";
+import { perspectiveOf, requestCountsByPart } from "@/lib/requests";
 import { BackLink } from "@/components/BackLink";
 import { BookNav } from "@/components/BookNav";
 import { ButtonLink } from "@/components/Button";
@@ -28,18 +29,18 @@ export default async function BookPage({ params }: { params: Promise<{ bookId: s
     latestVersionsByPart(bookId),
   ]);
 
-  // 요청·확인·완료는 3단계에서 실제 값으로 바뀐다.
-  const rows = parts.map((part) => ({
-    part,
-    latest: latest.get(part.id),
-    status: computePartStatus({
-      hasVersion: latest.has(part.id),
-      openRequests: 0,
-      awaitingReview: 0,
-      completed: false,
-    }),
-  }));
-  const count = (...kinds: PartStatus["kind"][]) => rows.filter((r) => kinds.includes(r.status.kind)).length;
+  const counts = await requestCountsByPart(parts.map((p) => p.id));
+  const rows = parts.map((part) => {
+    const v = latest.get(part.id);
+    const status = computePartStatus({
+      hasVersion: Boolean(v),
+      ...(counts.get(part.id) ?? { openRequests: 0, awaitingReview: 0 }),
+      completed: Boolean(v && part.completedVersionId === v.id),
+    });
+    const turn = viewerTurn(status.kind, perspectiveOf(user, { role, part }));
+    return { part, latest: v, status: { ...status, tone: viewerTone(status, turn) }, turn };
+  });
+  const count = (turn: string) => rows.filter((r) => r.turn === turn).length;
   const manage = canManageBook(user, role, book.status);
   const archived = book.status === "ARCHIVED";
   const editors = summary?.editorNames.join(", ") || "없음";
@@ -68,9 +69,9 @@ export default async function BookPage({ params }: { params: Promise<{ bookId: s
               {archived && <StatusBadge tone="gray">보관됨</StatusBadge>}
             </p>
             <ul aria-label="파트 현황" className="mt-4 flex flex-wrap gap-2">
-              <CountChip tone="red" label="내 차례" n={count("REQUESTS")} />
-              <CountChip tone="yellow" label="상대 차례" n={count("AWAITING", "EDITOR_REVIEW")} />
-              <CountChip tone="green" label="완료" n={count("DONE")} />
+              <CountChip tone="red" label="내 차례" n={count("mine")} />
+              <CountChip tone="yellow" label="상대 차례" n={count("theirs")} />
+              <CountChip tone="green" label="완료" n={count("done")} />
             </ul>
           </div>
           {manage && (
@@ -108,12 +109,13 @@ export default async function BookPage({ params }: { params: Promise<{ bookId: s
                 <span>상태</span>
               </TableHead>
               <ul>
-                {rows.map(({ part, status, latest }) => (
+                {rows.map(({ part, status, latest, turn }) => (
                   <PartRow
                     key={part.id}
                     part={part}
                     status={status}
                     latest={latest}
+                    myTurn={turn === "mine"}
                     mine={part.assigneeUserId === user.id}
                   />
                 ))}

@@ -24,6 +24,8 @@ model User {
   memberships        BookMember[]
   assignedParts      Part[]
   uploadedVersions   Version[]
+  editRequests       EditRequest[]
+  editComments       EditRequestComment[]
 }
 
 model Session {
@@ -74,6 +76,9 @@ model Part {
   book           Book    @relation(fields: [bookId], references: [id], onDelete: Cascade)
   assignee       User?   @relation(fields: [assigneeUserId], references: [id], onDelete: SetNull)
   versions       Version[]
+  requests       EditRequest[]
+  /// 편집장이 "이 파트 완료"를 누른 버전. 최신 버전과 같을 때만 완료로 본다(새 버전이 오르면 저절로 풀림).
+  completedVersionId String?
 
   @@unique([bookId, order])
 }
@@ -94,6 +99,76 @@ model Version {
   createdAt    DateTime @default(now())
   part         Part     @relation(fields: [partId], references: [id], onDelete: Cascade)
   uploadedBy   User?    @relation(fields: [uploadedById], references: [id], onDelete: SetNull)
+  requests     EditRequest[]
+  comments     EditRequestComment[]
 
   @@unique([partId, number])
+}
+
+enum EditRequestKind {
+  /// 편집장이 담당 교사에게 남기는 수정 요청
+  REQUEST
+  /// 담당 교사가 편집장에게 남기는 질문
+  QUESTION
+}
+
+enum EditRequestStatus {
+  /// 요청됨(교사 차례) / 질문(편집장 차례)
+  OPEN
+  /// 교사가 응답함(편집장 확인 차례) — 요청만
+  RESPONDED
+  /// 편집장이 확인 완료 — 요청만
+  RESOLVED
+  /// 편집장이 답함 — 질문만
+  ANSWERED
+}
+
+enum EditCommentAction {
+  NOTE
+  RESPOND
+  RESOLVE
+  REREQUEST
+  ANSWER
+}
+
+/// 미리보기의 한 쪽 위에 그린 영역 + 메모. 좌표는 쪽 크기 대비 비율(0~1).
+model EditRequest {
+  id         String            @id @default(cuid())
+  partId     String
+  versionId  String
+  number     Int
+  kind       EditRequestKind
+  status     EditRequestStatus @default(OPEN)
+  page       Int
+  x          Float
+  y          Float
+  w          Float
+  h          Float
+  body       String
+  authorId   String?
+  createdAt  DateTime          @default(now())
+  updatedAt  DateTime          @updatedAt
+  part       Part              @relation(fields: [partId], references: [id], onDelete: Cascade)
+  version    Version           @relation(fields: [versionId], references: [id], onDelete: Restrict)
+  author     User?             @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  comments   EditRequestComment[]
+
+  @@unique([partId, number])
+  @@index([partId, status])
+}
+
+model EditRequestComment {
+  id        String            @id @default(cuid())
+  requestId String
+  authorId  String?
+  body      String            @default("")
+  action    EditCommentAction @default(NOTE)
+  /// 새 버전으로 응답했을 때 그 버전
+  versionId String?
+  createdAt DateTime          @default(now())
+  request   EditRequest       @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  author    User?             @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  version   Version?          @relation(fields: [versionId], references: [id], onDelete: SetNull)
+
+  @@index([requestId])
 }
