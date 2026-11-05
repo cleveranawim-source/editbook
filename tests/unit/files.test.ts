@@ -42,4 +42,6 @@ test("contentTypeFor and formatBytes", () => {
   expect(formatBytes(500 * 1024)).toBe("500KB");
   expect(formatBytes(2.5 * 1024 * 1024)).toBe("2.5MB");
   expect(formatBytes(20 * 1024 * 1024)).toBe("20MB");
+  expect(formatBytes(0)).toBe("0KB");
+  expect(formatBytes(1.5 * 1024 * 1024 * 1024)).toBe("1.5GB");
 });
