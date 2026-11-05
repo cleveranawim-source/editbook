@@ -5,22 +5,29 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cx } from "@/components/cx";
 
-/** 머리 줄 종 모양. 안 읽은 수를 1분마다·창으로 돌아올 때·화면을 옮길 때 다시 센다. */
+let lastFetch = 0;
+
+/** 머리 줄 종 모양. 안 읽은 수를 2분마다·창으로 돌아올 때·화면을 옮길 때(30초에 한 번까지) 다시 센다. */
 export function NotificationBell({ initial }: { initial: number }) {
   const [count, setCount] = useState(initial);
   const pathname = usePathname();
 
   useEffect(() => {
     let alive = true;
-    const load = () =>
-      fetch("/api/notifications/count", { cache: "no-store" })
+    const load = () => {
+      // 30초 안에 다시 묻지 않는다(화면을 빠르게 옮겨 다닐 때 서버 부담 줄이기).
+      const now = Date.now();
+      if (now - lastFetch < 30_000) return;
+      lastFetch = now;
+      return fetch("/api/notifications/count", { cache: "no-store" })
         .then((r) => (r.ok ? r.json() : null))
         .then((j: { count: number } | null) => {
           if (alive && j) setCount(j.count);
         })
         .catch(() => {});
+    };
     load();
-    const t = setInterval(load, 60_000);
+    const t = setInterval(load, 120_000);
     window.addEventListener("focus", load);
     return () => {
       alive = false;

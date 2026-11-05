@@ -11,7 +11,14 @@ if [ -z "${DATABASE_URL:-}" ]; then
   echo "DATABASE_URL이 없어 마이그레이션·시드를 건너뜁니다. Vercel 프로젝트의 Storage에서 Neon을 연결한 뒤 다시 배포하세요."
 else
   echo "== 마이그레이션 적용 =="
-  npx prisma migrate deploy
+  # 실행 중인 서버가 연결을 잡고 있으면 "too many connections"로 실패할 수 있어 몇 번 기다렸다 다시 시도한다.
+  ok=0
+  for try in 1 2 3 4 5; do
+    if npx prisma migrate deploy; then ok=1; break; fi
+    echo "마이그레이션 실패(${try}/5). 20초 뒤 다시 시도합니다."
+    sleep 20
+  done
+  [ "$ok" = 1 ] || { echo "마이그레이션을 적용하지 못했습니다."; exit 1; }
   if [ -z "${ADMIN_PASSWORD:-}" ]; then
     echo "ADMIN_PASSWORD가 없어 관리자 계정 생성을 건너뜁니다. Settings → Environment Variables에 넣고 다시 배포하세요."
   else
