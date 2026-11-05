@@ -32,7 +32,7 @@ test("fileUrl maps local refs to the files route and adds download flags", () =>
   expect(fileUrl("local:p/s/a.pdf", { download: true })).toBe("/api/files/p/s/a.pdf?download=1");
   expect(fileUrl("https://x.public.blob.vercel-storage.com/a.pdf")).toBe("https://x.public.blob.vercel-storage.com/a.pdf");
   expect(fileUrl("https://x.public.blob.vercel-storage.com/a.pdf", { download: true })).toBe(
-    "https://x.public.blob.vercel-storage.com/a.pdf?download=1",
+    "/api/download?ref=https%3A%2F%2Fx.public.blob.vercel-storage.com%2Fa.pdf",
   );
 });
 

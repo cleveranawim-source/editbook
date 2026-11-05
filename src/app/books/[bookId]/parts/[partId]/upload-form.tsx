@@ -8,7 +8,7 @@ import { Button } from "@/components/Button";
 import { cx } from "@/components/cx";
 import { Field, FormError, Input } from "@/components/Field";
 import type { BlobUploadMode, StorageKind } from "@/lib/storage";
-import { extensionOf, formatBytes, isOriginalName, MAX_FILE_BYTES, ORIGINAL_ACCEPT, safeFilename } from "@/lib/files";
+import { extensionOf, formatBytes, isOriginalName, MAX_FILE_BYTES, ORIGINAL_ACCEPT } from "@/lib/files";
 import { hwpToPdf, isHwpName } from "@/lib/hwp-client";
 
 /**
@@ -75,7 +75,9 @@ export function UploadForm({
   async function putFile(file: File, onProgress: (pct: number) => void): Promise<string> {
     if (storage === "blob") {
       const put = blobMode === "presigned" ? uploadPresigned : upload;
-      const result = await put(`parts/${partId}/${safeFilename(file.name)}`, file, {
+      // 저장 경로는 영문·숫자만 쓴다(한글 경로는 Vercel 서명 검사에서 깨진다). 원래 이름은 DB에 따로 남긴다.
+      const key = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}.${extensionOf(file.name) || "bin"}`;
+      const result = await put(`parts/${partId}/${key}`, file, {
         access: "public",
         handleUploadUrl: "/api/blob/upload",
         clientPayload: JSON.stringify({ partId }),

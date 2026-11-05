@@ -71,16 +71,15 @@ export async function readLocalFile(key: string): Promise<Buffer | null> {
   }
 }
 
-/** ref → 브라우저가 열 주소. download가 true면 첨부로 내려받게 한다. */
+/**
+ * ref → 브라우저가 열 주소. download가 true면 첨부로 내려받게 한다.
+ * Blob 파일의 내려받기는 /api/download를 거쳐 원래(한글) 파일 이름을 붙인다. 미리보기는 Blob 주소를 바로 쓴다.
+ */
 export function fileUrl(ref: string, opts?: { download?: boolean }): string {
   if (isLocalRef(ref)) {
     const base = `/api/files/${localKeyOf(ref).split("/").map(encodeURIComponent).join("/")}`;
     return opts?.download ? `${base}?download=1` : base;
   }
-  if (opts?.download) {
-    const u = new URL(ref);
-    u.searchParams.set("download", "1");
-    return u.toString();
-  }
+  if (opts?.download) return `/api/download?ref=${encodeURIComponent(ref)}`;
   return ref;
 }
