@@ -2,7 +2,6 @@
 
 import { useRef, useState, type DragEvent } from "react";
 import { useRouter } from "next/navigation";
-import { upload, uploadPresigned } from "@vercel/blob/client";
 import { createVersionAction } from "./actions";
 import { Button } from "@/components/Button";
 import { cx } from "@/components/cx";
@@ -10,6 +9,7 @@ import { Field, FormError, Input } from "@/components/Field";
 import type { BlobUploadMode, StorageKind } from "@/lib/storage";
 import { extensionOf, formatBytes, isOriginalName, MAX_FILE_BYTES, ORIGINAL_ACCEPT } from "@/lib/files";
 import { hwpToPdf, isHwpName } from "@/lib/hwp-client";
+import { asciiKey, putToBlob, readIntoMemory } from "@/lib/upload-client";
 
 /**
  * 새 버전 올리기. 원고 파일 하나(필수) + 미리보기용 PDF(한글·워드일 때 권장).
@@ -46,10 +46,27 @@ export function UploadForm({
   const originalIsHwp = original ? isHwpName(original.name) : false;
   const needsPdfHint = original && !originalIsPdf && !originalIsHwp && !pdf;
 
-  function chooseOriginal(f: File) {
+  /** 고르는 즉시 메모리에 복사해 둔다. 그 뒤 디스크의 파일이 바뀌어도(한글 자동 저장 등) 올리기에 지장이 없다. */
+  async function remember(f: File): Promise<File | null> {
+    try {
+      return await readIntoMemory(f);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "파일을 읽지 못했습니다. 다시 골라 주세요.");
+      return null;
+    }
+  }
+
+  async function chooseOriginal(f: File) {
     setError(undefined);
     setConvertFailed(false);
-    setOriginal(f);
+    const copy = await remember(f);
+    if (copy) setOriginal(copy);
+  }
+
+  async function choosePdf(f: File) {
+    setError(undefined);
+    const copy = await remember(f);
+    if (copy) setPdf(copy);
   }
 
   function pick(files: FileList | File[]) {
@@ -57,12 +74,12 @@ export function UploadForm({
     const pdfs = list.filter((f) => extensionOf(f.name) === "pdf");
     const docs = list.filter((f) => isOriginalName(f.name) && extensionOf(f.name) !== "pdf");
     setError(undefined);
-    if (docs[0]) chooseOriginal(docs[0]);
-    if (docs[0] && pdfs[0]) setPdf(pdfs[0]);
+    if (docs[0]) void chooseOriginal(docs[0]);
+    if (docs[0] && pdfs[0]) void choosePdf(pdfs[0]);
     else if (!docs[0] && pdfs[0]) {
       // PDF만 떨어뜨리면: 원고가 이미 있으면 미리보기로, 없으면 원고 자체로.
-      if (original && !originalIsPdf) setPdf(pdfs[0]);
-      else chooseOriginal(pdfs[0]);
+      if (original && !originalIsPdf) void choosePdf(pdfs[0]);
+      else void chooseOriginal(pdfs[0]);
     }
     if (!docs[0] && !pdfs[0] && list[0]) {
       setError("원고는 한글(hwp, hwpx)·워드(docx)·PDF 파일만 올릴 수 있습니다.");
@@ -78,17 +95,13 @@ export function UploadForm({
 
   async function putFile(file: File, onProgress: (pct: number) => void): Promise<string> {
     if (storage === "blob") {
-      const put = blobMode === "presigned" ? uploadPresigned : upload;
-      // 저장 경로는 영문·숫자만 쓴다(한글 경로는 Vercel 서명 검사에서 깨진다). 원래 이름은 DB에 따로 남긴다.
-      const key = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}.${extensionOf(file.name) || "bin"}`;
-      const result = await put(`parts/${partId}/${key}`, file, {
-        access: "public",
-        handleUploadUrl: "/api/blob/upload",
+      return putToBlob({
+        pathname: `parts/${partId}/${asciiKey(file.name)}`,
+        body: file,
+        blobMode,
         clientPayload: JSON.stringify({ partId }),
-        multipart: file.size > 8 * 1024 * 1024,
-        onUploadProgress: (p) => onProgress(p.percentage),
+        onProgress,
       });
-      return result.url;
     }
     throw new Error("local storage uses /api/upload");
   }
@@ -104,15 +117,30 @@ export function UploadForm({
     }
     setPending(true);
     setError(undefined);
+    // 고른 파일을 먼저 메모리에 복사한다. 고른 뒤 디스크의 파일이 바뀌어도(한글 자동 저장, 드라이브 동기화) 올리기가 멈추지 않게.
+    let source: File;
+    let attached: File | null;
+    try {
+      source = await readIntoMemory(original);
+      attached = pdf ? await readIntoMemory(pdf) : null;
+    } catch (e) {
+      setPending(false);
+      setOriginal(null);
+      setPdf(null);
+      if (originalInput.current) originalInput.current.value = "";
+      if (pdfInput.current) pdfInput.current.value = "";
+      setError(e instanceof Error ? e.message : "파일을 읽지 못했습니다. 다시 골라 주세요.");
+      return;
+    }
     // 한글 파일이고 PDF를 따로 안 붙였으면 브라우저에서 미리보기 PDF를 만든다.
-    let previewPdf = pdf;
+    let previewPdf = attached;
     if (!previewPdf && originalIsHwp && !convertFailed) {
       try {
         setConverting({ done: 0, total: 0 });
-        const bytes = await hwpToPdf(new Uint8Array(await original.arrayBuffer()), (done, total) =>
+        const bytes = await hwpToPdf(new Uint8Array(await source.arrayBuffer()), (done, total) =>
           setConverting({ done, total }),
         );
-        const base = original.name.replace(/\.(hwpx?|HWPX?)$/, "");
+        const base = source.name.replace(/\.(hwpx?|HWPX?)$/, "");
         previewPdf = new File([bytes as BlobPart], `${base} (자동 변환).pdf`, { type: "application/pdf" });
       } catch (e) {
         setConvertFailed(true);
@@ -132,16 +160,16 @@ export function UploadForm({
       let originalRef: string;
       let pdfRef: string | null = null;
       if (storage === "blob") {
-        const total = original.size + (previewPdf?.size ?? 0);
-        originalRef = await putFile(original, (pct) => setProgress((pct * original.size) / total));
+        const total = source.size + (previewPdf?.size ?? 0);
+        originalRef = await putFile(source, (pct) => setProgress((pct * source.size) / total));
         if (previewPdf) {
           const p = previewPdf;
-          pdfRef = await putFile(p, (pct) => setProgress(((original.size + (pct / 100) * p.size) / total) * 100));
+          pdfRef = await putFile(p, (pct) => setProgress(((source.size + (pct / 100) * p.size) / total) * 100));
         }
       } else {
         const form = new FormData();
         form.set("partId", partId);
-        form.set("original", original);
+        form.set("original", source);
         if (previewPdf) form.set("pdf", previewPdf);
         const res = await fetch("/api/upload", { method: "POST", body: form });
         const json = (await res.json()) as { originalRef?: string; pdfRef?: string | null; error?: string };
@@ -154,7 +182,7 @@ export function UploadForm({
         partId,
         originalRef,
         originalName: original.name,
-        originalSize: original.size,
+        originalSize: source.size,
         pdfRef,
         pdfName: previewPdf?.name ?? null,
         note,
@@ -212,7 +240,7 @@ export function UploadForm({
             disabled={pending}
             onChange={(e) => {
               const f = e.currentTarget.files?.[0];
-              if (f) chooseOriginal(f);
+              if (f) void chooseOriginal(f);
             }}
             className="file:mr-3 file:border file:border-ink file:bg-paper file:px-3 file:py-1 file:font-bold"
           />
@@ -235,10 +263,7 @@ export function UploadForm({
               disabled={pending}
               onChange={(e) => {
                 const f = e.currentTarget.files?.[0];
-                if (f) {
-                  setError(undefined);
-                  setPdf(f);
-                }
+                if (f) void choosePdf(f);
               }}
               className="file:mr-3 file:border file:border-ink file:bg-paper file:px-3 file:py-1 file:font-bold"
             />
