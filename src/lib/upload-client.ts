@@ -39,8 +39,20 @@ export async function readIntoMemory(file: File): Promise<File> {
   }
 }
 
-/** 이만큼 오래 한 바이트도 더 못 올리면 멈춘 것으로 보고 중단한다. */
-const STALL_MS = 90_000;
+/**
+ * 진행 신호가 이만큼 오래 전혀 없으면 멈춘 것으로 본다(스트리밍 방식에서만).
+ * 크롬은 보낼 내용을 미리 버퍼에 담아 두므로 느린 연결에서는 몇 분씩 신호가 없을 수 있다. 넉넉히 잡는다.
+ */
+const SILENCE_MS = 5 * 60_000;
+
+/**
+ * 파일 하나에 허락하는 최대 시간. 올리기 허가(1시간)가 끝나기 전에 스스로 멈춘다.
+ * 속도를 가정한 제한은 두지 않는다: 느리더라도 실제로 올라가고 있으면 기다린다.
+ */
+const TOTAL_LIMIT_MS = 55 * 60_000;
+
+export const TIME_LIMIT_MESSAGE =
+  "인터넷이 너무 느려 1시간 안에 다 올리지 못했습니다. 더 빠른 인터넷에서 다시 올리거나, 파일 크기를 줄여 주세요.";
 
 export const STALLED_MESSAGE =
   "올리기가 멈춰서 중단했습니다. 인터넷 연결을 확인하고, 파일을 다시 골라 올려 주세요.";
@@ -50,7 +62,7 @@ let streamCheck: Promise<boolean> | null = null;
 /**
  * 이 브라우저·인터넷 환경에서 "스트리밍 업로드"가 되는지 한 번 확인한다.
  * Blob 업로드 부품은 진행률을 보이려고 크롬의 스트리밍 업로드(fetch + ReadableStream)를 쓰는데,
- * 이것은 HTTP/2 연결에서만 된다. 학교망 보안 장비·백신(HTTPS 검사)·프록시가 연결을 HTTP/1.1로
+ * 이것은 HTTP/2·HTTP/3 연결에서만 된다. 학교망 보안 장비·백신(HTTPS 검사)·프록시가 연결을 HTTP/1.1로
  * 바꾸면 매번 "Failed to fetch"로 실패하고, 부품은 이를 연결 끊김으로 여겨 십여 분 재시도한다
  * (화면은 0%에 멈춘다). 안 되는 환경이면 진행률 없이 평범한 방식으로 올린다.
  */
@@ -84,7 +96,7 @@ export function canStreamUpload(): Promise<boolean> {
 
 /**
  * Blob에 파일 하나를 올린다.
- * - 스트리밍이 되는 환경: 실제 진행률을 보이고, 진행이 STALL_MS 동안 멈추면 바로 실패로 끝낸다.
+ * - 스트리밍이 되는 환경: 진행률을 보이고, 신호가 SILENCE_MS 동안 전혀 없으면 실패로 끝낸다.
  * - 안 되는 환경: 진행률 없이 올린다. 화면이 멈춘 것처럼 보이지 않게 예상 진행률(최대 90%)을 보인다.
  */
 export async function putToBlob(opts: {
@@ -100,22 +112,24 @@ export async function putToBlob(opts: {
   const streaming = await canStreamUpload();
   opts.onMode?.(streaming);
   const controller = new AbortController();
-  let timer: ReturnType<typeof setTimeout> | undefined;
+  let silenceTimer: ReturnType<typeof setTimeout> | undefined;
+  let totalTimer: ReturnType<typeof setTimeout> | undefined;
   let ticker: ReturnType<typeof setInterval> | undefined;
-  let lastPct = -1;
   let ping = () => {};
-  // 스트리밍이 안 되면 진행 신호가 없으므로, 아주 느린 연결(초당 25KB)도 끝낼 수 있을 만큼 기다린다.
-  const limitMs = streaming ? STALL_MS : 120_000 + (opts.body.size / 25_000) * 1000;
   const stalled = new Promise<never>((_, reject) => {
-    const arm = () => {
-      clearTimeout(timer);
-      timer = setTimeout(() => {
-        controller.abort();
-        reject(new Error(STALLED_MESSAGE));
-      }, limitMs);
+    const fail = (message: string) => () => {
+      controller.abort();
+      reject(new Error(message));
     };
-    arm();
-    ping = arm;
+    totalTimer = setTimeout(fail(TIME_LIMIT_MESSAGE), TOTAL_LIMIT_MS);
+    if (streaming) {
+      // 진행 신호가 올 때마다(재시도로 진행률이 되돌아가도) 다시 센다.
+      ping = () => {
+        clearTimeout(silenceTimer);
+        silenceTimer = setTimeout(fail(STALLED_MESSAGE), SILENCE_MS);
+      };
+      ping();
+    }
   });
   if (!streaming && opts.onProgress) {
     const started = Date.now();
@@ -133,10 +147,7 @@ export async function putToBlob(opts: {
         abortSignal: controller.signal,
         onUploadProgress: streaming
           ? (p) => {
-              if (p.percentage > lastPct) {
-                lastPct = p.percentage;
-                ping();
-              }
+              ping();
               opts.onProgress?.(p.percentage);
             }
           : undefined,
@@ -146,7 +157,8 @@ export async function putToBlob(opts: {
     opts.onProgress?.(100);
     return res.url;
   } finally {
-    clearTimeout(timer);
+    clearTimeout(silenceTimer);
+    clearTimeout(totalTimer);
     clearInterval(ticker);
   }
 }

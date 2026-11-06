@@ -8,7 +8,7 @@ import { cx } from "@/components/cx";
 import { Field, FormError, Input } from "@/components/Field";
 import type { BlobUploadMode, StorageKind } from "@/lib/storage";
 import { extensionOf, formatBytes, isOriginalName, MAX_FILE_BYTES, ORIGINAL_ACCEPT } from "@/lib/files";
-import { hwpToPdf, isHwpName } from "@/lib/hwp-client";
+import { errorText, hwpToPdf, isHwpName, previewFailureReason } from "@/lib/hwp-client";
 import { asciiKey, putToBlob, readIntoMemory } from "@/lib/upload-client";
 
 /**
@@ -39,7 +39,12 @@ export function UploadForm({
   const [pending, setPending] = useState(false);
   const [dragging, setDragging] = useState(false);
   const [converting, setConverting] = useState<{ done: number; total: number } | null>(null);
-  const [convertFailed, setConvertFailed] = useState(false);
+  const [readingOriginal, setReadingOriginal] = useState(false);
+  const [readingPdf, setReadingPdf] = useState(false);
+  const reading = readingOriginal || readingPdf;
+  const [notice, setNotice] = useState<string | undefined>();
+  const originalGen = useRef(0);
+  const pdfGen = useRef(0);
   const originalInput = useRef<HTMLInputElement>(null);
   const pdfInput = useRef<HTMLInputElement>(null);
 
@@ -47,27 +52,49 @@ export function UploadForm({
   const originalIsHwp = original ? isHwpName(original.name) : false;
   const needsPdfHint = original && !originalIsPdf && !originalIsHwp && !pdf;
 
-  /** 고르는 즉시 메모리에 복사해 둔다. 그 뒤 디스크의 파일이 바뀌어도(한글 자동 저장 등) 올리기에 지장이 없다. */
-  async function remember(f: File): Promise<File | null> {
+  /**
+   * 고르는 즉시 메모리에 복사해 둔다. 그 뒤 디스크의 파일이 바뀌어도(한글 자동 저장 등) 올리기에 지장이 없다.
+   * 그사이 같은 칸에 다른 파일을 고르면(gen이 바뀌면) 예전 읽기의 결과·오류·로딩 표시는 모두 버린다.
+   */
+  async function remember(
+    f: File,
+    gen: { current: number },
+    setBusy: (v: boolean) => void,
+    keep: (copy: File | null) => void,
+  ) {
+    const mine = ++gen.current;
+    const current = () => mine === gen.current;
+    keep(null);
+    if (f.size > MAX_FILE_BYTES) {
+      setError(`‘${f.name}’ 파일이 너무 큽니다(최대 100MB).`);
+      setBusy(false);
+      return;
+    }
+    setBusy(true);
     try {
-      return await readIntoMemory(f);
+      const copy = await readIntoMemory(f);
+      if (current()) keep(copy);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "파일을 읽지 못했습니다. 다시 골라 주세요.");
-      return null;
+      if (current()) setError(errorText(e));
+    } finally {
+      if (current()) setBusy(false);
     }
   }
 
   async function chooseOriginal(f: File) {
     setError(undefined);
-    setConvertFailed(false);
-    const copy = await remember(f);
-    if (copy) setOriginal(copy);
+    setNotice(undefined);
+    // 원고를 바꾸면 예전 원고용으로 붙인 PDF는 뗀다(같이 떨어뜨린 PDF는 choosePdf가 다시 붙인다).
+    pdfGen.current++;
+    setPdf(null);
+    setReadingPdf(false);
+    if (pdfInput.current) pdfInput.current.value = "";
+    await remember(f, originalGen, setReadingOriginal, setOriginal);
   }
 
   async function choosePdf(f: File) {
     setError(undefined);
-    const copy = await remember(f);
-    if (copy) setPdf(copy);
+    await remember(f, pdfGen, setReadingPdf, setPdf);
   }
 
   function pick(files: FileList | File[]) {
@@ -119,40 +146,30 @@ export function UploadForm({
     }
     setPending(true);
     setError(undefined);
-    // 고른 파일을 먼저 메모리에 복사한다. 고른 뒤 디스크의 파일이 바뀌어도(한글 자동 저장, 드라이브 동기화) 올리기가 멈추지 않게.
-    let source: File;
-    let attached: File | null;
-    try {
-      source = await readIntoMemory(original);
-      attached = pdf ? await readIntoMemory(pdf) : null;
-    } catch (e) {
-      setPending(false);
-      setOriginal(null);
-      setPdf(null);
-      if (originalInput.current) originalInput.current.value = "";
-      if (pdfInput.current) pdfInput.current.value = "";
-      setError(e instanceof Error ? e.message : "파일을 읽지 못했습니다. 다시 골라 주세요.");
-      return;
-    }
+    setNotice(undefined);
+    // 고를 때 이미 메모리에 복사해 두었다.
+    const source = original;
     // 한글 파일이고 PDF를 따로 안 붙였으면 브라우저에서 미리보기 PDF를 만든다.
-    let previewPdf = attached;
-    if (!previewPdf && originalIsHwp && !convertFailed) {
+    // 만들지 못해도 원고는 그대로 올린다(미리보기 없이).
+    let previewPdf = pdf;
+    let previewProblem: string | undefined;
+    if (!previewPdf && originalIsHwp) {
       try {
         setConverting({ done: 0, total: 0 });
-        const bytes = await hwpToPdf(new Uint8Array(await source.arrayBuffer()), (done, total) =>
-          setConverting({ done, total }),
+        const bytes = await hwpToPdf(
+          new Uint8Array(await source.arrayBuffer()),
+          (done, total) => setConverting({ done, total }),
+          MAX_FILE_BYTES - 1024 * 1024,
         );
         const base = source.name.replace(/\.(hwpx?|HWPX?)$/, "");
         previewPdf = new File([bytes as BlobPart], `${base} (자동 변환).pdf`, { type: "application/pdf" });
+        if (previewPdf.size > MAX_FILE_BYTES) {
+          previewPdf = null;
+          previewProblem = "미리보기 PDF가 100MB를 넘습니다";
+        }
       } catch (e) {
-        setConvertFailed(true);
-        setPending(false);
-        setConverting(null);
-        setError(
-          `한글 파일을 읽어 PDF를 만들지 못했습니다(${e instanceof Error ? e.message : "알 수 없는 오류"}). ` +
-            "한글에서 [PDF로 저장]한 파일을 함께 올리거나, 미리보기 없이 그대로 올리려면 버튼을 한 번 더 누르세요.",
-        );
-        return;
+        previewPdf = null;
+        previewProblem = previewFailureReason(e);
       } finally {
         setConverting(null);
       }
@@ -191,9 +208,14 @@ export function UploadForm({
         respondsTo,
       });
       if (!result.ok) throw new Error(result.error);
+      if (previewProblem) {
+        setNotice(
+          `원고는 올렸지만, 사이트에서 볼 미리보기는 만들지 못했습니다(${previewProblem}). ` +
+            "한글에서 [PDF로 저장]한 파일을 새 버전으로 함께 올리면 사이트에서 바로 볼 수 있습니다.",
+        );
+      }
       setOriginal(null);
       setPdf(null);
-      setConvertFailed(false);
       setRespondsTo([]);
       setNote("");
       if (originalInput.current) originalInput.current.value = "";
@@ -201,7 +223,7 @@ export function UploadForm({
       router.push(`?v=${result.number}`);
       router.refresh();
     } catch (e) {
-      setError(e instanceof Error && e.message ? e.message : "업로드에 실패했습니다. 다시 시도하세요.");
+      setError(`올리지 못했습니다: ${errorText(e)}`);
     } finally {
       setPending(false);
       setProgress(null);
@@ -305,6 +327,12 @@ export function UploadForm({
         </p>
       )}
       <FormError message={error} />
+      {notice && (
+        <p role="status" className="text-[13px] leading-snug text-st-amber-fg">
+          {notice}
+        </p>
+      )}
+      {reading && <p className="text-sm text-ink-2">파일을 읽는 중…</p>}
       {converting && (
         <p aria-live="polite" className="text-sm text-ink-2">
           한글 원고를 읽어 미리보기 PDF를 만드는 중…{converting.total ? ` (${converting.done}/${converting.total}쪽)` : ""}
@@ -323,8 +351,8 @@ export function UploadForm({
           지금 인터넷 환경에서는 정확한 진행률을 잴 수 없어 예상치로 보여 드립니다. 다 올라갈 때까지 이 화면을 닫지 마세요.
         </p>
       )}
-      <Button type="submit" variant="primary" pending={pending} pendingLabel="올리는 중…" disabled={!original}>
-        {convertFailed ? "미리보기 없이 올리기" : original ? "이 파일로 새 버전 올리기" : "새 버전 올리기"}
+      <Button type="submit" variant="primary" pending={pending} pendingLabel="올리는 중…" disabled={!original || reading}>
+        {original ? "이 파일로 새 버전 올리기" : "새 버전 올리기"}
       </Button>
     </form>
   );
