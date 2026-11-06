@@ -45,9 +45,47 @@ const STALL_MS = 90_000;
 export const STALLED_MESSAGE =
   "올리기가 멈춰서 중단했습니다. 인터넷 연결을 확인하고, 파일을 다시 골라 올려 주세요.";
 
+let streamCheck: Promise<boolean> | null = null;
+
 /**
- * Blob에 파일 하나를 올린다. 진행이 STALL_MS 동안 멈추면 바로 실패로 끝낸다
- * (업로드 부품의 자동 재시도는 길게는 십여 분 기다리므로 그동안 화면이 멈춘 것처럼 보인다).
+ * 이 브라우저·인터넷 환경에서 "스트리밍 업로드"가 되는지 한 번 확인한다.
+ * Blob 업로드 부품은 진행률을 보이려고 크롬의 스트리밍 업로드(fetch + ReadableStream)를 쓰는데,
+ * 이것은 HTTP/2 연결에서만 된다. 학교망 보안 장비·백신(HTTPS 검사)·프록시가 연결을 HTTP/1.1로
+ * 바꾸면 매번 "Failed to fetch"로 실패하고, 부품은 이를 연결 끊김으로 여겨 십여 분 재시도한다
+ * (화면은 0%에 멈춘다). 안 되는 환경이면 진행률 없이 평범한 방식으로 올린다.
+ */
+export function canStreamUpload(): Promise<boolean> {
+  streamCheck ??= (async () => {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 10_000);
+    try {
+      const body = new ReadableStream<Uint8Array>({
+        start(c) {
+          c.enqueue(new Uint8Array([0]));
+          c.close();
+        },
+      });
+      // 아무 HTTP 응답(권한 없음 403 포함)이라도 오면 스트리밍이 되는 것이다. 파일은 만들어지지 않는다.
+      await fetch("https://vercel.com/api/blob/?pathname=editbook-probe.txt", {
+        method: "PUT",
+        body,
+        signal: controller.signal,
+        duplex: "half",
+      } as RequestInit & { duplex: "half" });
+      return true;
+    } catch {
+      return false;
+    } finally {
+      clearTimeout(timer);
+    }
+  })();
+  return streamCheck;
+}
+
+/**
+ * Blob에 파일 하나를 올린다.
+ * - 스트리밍이 되는 환경: 실제 진행률을 보이고, 진행이 STALL_MS 동안 멈추면 바로 실패로 끝낸다.
+ * - 안 되는 환경: 진행률 없이 올린다. 화면이 멈춘 것처럼 보이지 않게 예상 진행률(최대 90%)을 보인다.
  */
 export async function putToBlob(opts: {
   pathname: string;
@@ -55,23 +93,36 @@ export async function putToBlob(opts: {
   blobMode: BlobUploadMode;
   clientPayload: string;
   onProgress?: (pct: number) => void;
+  /** 진행률을 실제로 잴 수 없는 환경이면 false로 한 번 알린다. */
+  onMode?: (realProgress: boolean) => void;
 }): Promise<string> {
   const put = opts.blobMode === "presigned" ? uploadPresigned : upload;
+  const streaming = await canStreamUpload();
+  opts.onMode?.(streaming);
   const controller = new AbortController();
   let timer: ReturnType<typeof setTimeout> | undefined;
+  let ticker: ReturnType<typeof setInterval> | undefined;
   let lastPct = -1;
   let ping = () => {};
+  // 스트리밍이 안 되면 진행 신호가 없으므로, 아주 느린 연결(초당 25KB)도 끝낼 수 있을 만큼 기다린다.
+  const limitMs = streaming ? STALL_MS : 120_000 + (opts.body.size / 25_000) * 1000;
   const stalled = new Promise<never>((_, reject) => {
     const arm = () => {
       clearTimeout(timer);
       timer = setTimeout(() => {
         controller.abort();
         reject(new Error(STALLED_MESSAGE));
-      }, STALL_MS);
+      }, limitMs);
     };
     arm();
     ping = arm;
   });
+  if (!streaming && opts.onProgress) {
+    const started = Date.now();
+    const tau = Math.max(5_000, (opts.body.size / 400_000) * 1000);
+    opts.onProgress(0);
+    ticker = setInterval(() => opts.onProgress?.(90 * (1 - Math.exp(-(Date.now() - started) / tau))), 1000);
+  }
   try {
     const res = await Promise.race([
       put(opts.pathname, opts.body, {
@@ -80,19 +131,23 @@ export async function putToBlob(opts: {
         clientPayload: opts.clientPayload,
         multipart: opts.body.size > 8 * 1024 * 1024,
         abortSignal: controller.signal,
-        onUploadProgress: (p) => {
-          if (p.percentage > lastPct) {
-            lastPct = p.percentage;
-            ping();
-          }
-          opts.onProgress?.(p.percentage);
-        },
+        onUploadProgress: streaming
+          ? (p) => {
+              if (p.percentage > lastPct) {
+                lastPct = p.percentage;
+                ping();
+              }
+              opts.onProgress?.(p.percentage);
+            }
+          : undefined,
       }),
       stalled,
     ]);
+    opts.onProgress?.(100);
     return res.url;
   } finally {
     clearTimeout(timer);
+    clearInterval(ticker);
   }
 }
 

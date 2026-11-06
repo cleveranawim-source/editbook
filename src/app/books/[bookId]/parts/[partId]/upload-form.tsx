@@ -35,6 +35,7 @@ export function UploadForm({
   const [note, setNote] = useState("");
   const [error, setError] = useState<string | undefined>();
   const [progress, setProgress] = useState<number | null>(null);
+  const [estimated, setEstimated] = useState(false);
   const [pending, setPending] = useState(false);
   const [dragging, setDragging] = useState(false);
   const [converting, setConverting] = useState<{ done: number; total: number } | null>(null);
@@ -101,6 +102,7 @@ export function UploadForm({
         blobMode,
         clientPayload: JSON.stringify({ partId }),
         onProgress,
+        onMode: (real) => setEstimated(!real),
       });
     }
     throw new Error("local storage uses /api/upload");
@@ -315,6 +317,11 @@ export function UploadForm({
           </span>
           <span className="w-10 text-right font-bold">{Math.round(progress)}%</span>
         </div>
+      )}
+      {progress !== null && estimated && (
+        <p className="text-[12.5px] leading-snug text-ink-3">
+          지금 인터넷 환경에서는 정확한 진행률을 잴 수 없어 예상치로 보여 드립니다. 다 올라갈 때까지 이 화면을 닫지 마세요.
+        </p>
       )}
       <Button type="submit" variant="primary" pending={pending} pendingLabel="올리는 중…" disabled={!original}>
         {convertFailed ? "미리보기 없이 올리기" : original ? "이 파일로 새 버전 올리기" : "새 버전 올리기"}
